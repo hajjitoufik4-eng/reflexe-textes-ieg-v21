@@ -1,0 +1,13 @@
+Version thématique allégée.
+
+Contenu conservé :
+- textes du corpus applicable : 121
+- accords/documents utiles : 106
+- articles/jurisprudences externes : 12
+
+Les décisions d'extension et les éléments peu utiles ont été exclus de l'index et du dossier documents.
+
+Mise à jour GitHub :
+1. Supprimer l'ancien dossier documents dans le dépôt.
+2. Copier index.html, data.js, documents, LISEZ-MOI.txt de ce dossier.
+3. Commit + Push.
