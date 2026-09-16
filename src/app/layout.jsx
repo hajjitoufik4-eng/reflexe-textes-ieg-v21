@@ -2,6 +2,7 @@ import Link from 'next/link';
 import './globals.css';
 import './extras.css';
 import './catalogue.css';
+import './law.css';
 import './search.css';
 import './text.css';
 
