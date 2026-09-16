@@ -3,37 +3,85 @@ import data from '../../data/all-documents.js';
 import { jurisprudence } from '../../data/jurisprudence.js';
 import { dossiers } from '../../data/dossiers.js';
 import { scopeOf, scopeName } from '../../lib/catalogue.mjs';
+import { packsForQuery, correlationFor, relationSummary } from '../../data/legal-relations.js';
 
-const norm=(s='')=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const norm=(s='')=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const aliases={
-  '48h':['48 h','duree maximale','temps de travail','repos'],
-  '48 h':['48h','duree maximale','temps de travail','repos'],
-  'astreinte':['action immediate','pers530','pers557','pers849','pers939','zha','zone habitat','mres','intervention'],
+  '48h':['48 h','duree maximale','temps de travail','repos','astreinte'],
+  '48 h':['48h','duree maximale','temps de travail','repos','astreinte'],
+  'astreinte':['action immediate','pers530','pers557','pers849','pers939','zha','zone habitat','mres','intervention','repos'],
   'pause':['pers77','pause meridienne','temps de travail'],
   'repas':['pers793','indemnite repas','deplacement'],
-  'discipline':['pers846','sanction','ep1','ep2'],
+  'discipline':['pers846','sanction','ep1','ep2','reglement interieur'],
+  '11h':['repos quotidien','11 h','astreinte'],
+  '11 h':['repos quotidien','11h','astreinte'],
 };
 const docText=d=>norm([d.ref,d.title,d.theme,d.folder,d.kind,d.scopeLabel,d.origin,d.explanation?.heading,d.explanation?.simple,...(d.explanation?.points||[]),d.explanation?.related].filter(Boolean).join(' '));
 const caseText=j=>norm([j.court,j.date,j.number,j.title,j.issue,j.result,j.scope,...(j.topics||[])].join(' '));
 const dossierText=d=>norm([d.title,d.subtitle,...d.queries,...d.sections.flatMap(s=>[s.title,s.text])].join(' '));
 const tokens=q=>{const n=norm(q);const extra=Object.entries(aliases).filter(([k])=>n.includes(norm(k))).flatMap(([,v])=>v.map(norm));return [...new Set([...n.split(/\s+/).filter(Boolean),...extra.flatMap(x=>x.split(' '))])];};
 const score=(hay,terms)=>terms.reduce((n,t)=>n+(hay.includes(t)?1:0),0);
+const uniqById=arr=>arr.filter((x,i,a)=>a.findIndex(y=>y.d.id===x.d.id)===i);
+const isExtension=d=>/décision d.?extension|decision d.?extension|texte remis a jour|modifi/i.test(`${d.title||''} ${d.kind||''}`);
+
+function CaseBlock({items}){
+ if(!items.length) return <p className="muted">Aucune décision vérifiée n’est encore reliée à cette recherche.</p>;
+ return <div className="search-case-grid">{items.map(({j})=><article className="search-case" key={j.id}>
+   <span>⚖️ {j.court}</span><h3>{j.number}</h3><p>{j.result}</p>
+   {j.judgment?.amounts?.length>0&&<div className="mini-amount">{j.judgment.amounts.slice(0,2).map(([label,amount])=><div key={label}><small>{label}</small><strong>{amount}</strong></div>)}</div>}
+   <a href={j.url} target="_blank" rel="noopener noreferrer">Décision officielle / source ↗</a>
+ </article>)}</div>;
+}
+
+function DocCard({item,label}){
+ const {d}=item;
+ return <Link className="correlation-doc" href={`/textes/${d.id}`}>
+   <div className="correlation-top"><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<b>{d.ref}</b>}<em>{label}</em></div>
+   <h3>{d.explanation?.heading||d.title}</h3>
+   <p>{d.explanation?.simple||item.why||'Ce document complète la lecture juridique de ta question.'}</p>
+   {item.why&&<small><strong>Pourquoi il apparaît :</strong> {item.why}</small>}
+   <i>Ouvrir la fiche →</i>
+ </Link>;
+}
 
 export default async function Recherche({searchParams}){
- const p=await searchParams; const q=(p?.q||'').trim(); const terms=tokens(q);
- const docs=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,80):[];
- const cases=q?jurisprudence.map(j=>({j,s:score(caseText(j),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
+ const p=await searchParams; const q=(p?.q||'').trim(); const terms=tokens(q); const packs=q?packsForQuery(q):[];
+ const lexical=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
+ const correlated=q?data.map(d=>{const rel=correlationFor(d,packs);return rel?{d,s:0,...rel}:null}).filter(Boolean):[];
+ const all=uniqById([...lexical,...correlated]);
+ const correlatedIds=new Set(correlated.map(x=>x.d.id));
+ const primary=all.filter(x=>correlatedIds.has(x.d.id)&&!isExtension(x.d)).sort((a,b)=>(b.s||0)-(a.s||0));
+ const extensions=all.filter(x=>correlatedIds.has(x.d.id)&&isExtension(x.d));
+ const other=lexical.filter(x=>!correlatedIds.has(x.d.id)).slice(0,30);
+ const packWords=packs.flatMap(p=>[p.id,p.label,...p.refs]);
+ const caseTerms=[...terms,...packWords.map(norm)];
+ const cases=q?jurisprudence.map(j=>({j,s:score(caseText(j),caseTerms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
  const ds=q?Object.values(dossiers).map(d=>({d,s:score(dossierText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
  const top=ds[0]?.d;
  return <>
-  <div className="eyebrow">Recherche transversale</div><h1>Recherche dans les textes, dossiers et jurisprudences</h1>
-  <p className="muted">Une seule recherche interroge 697 références documentaires, les explications, les thèmes et 7 décisions de justice vérifiées.</p>
-  <form className="searchbox" action="/recherche"><input name="q" defaultValue={q} autoFocus placeholder="Ex. départ immédiat, 48 h, PERS 530, pause 12-13, repas…" aria-label="Recherche"/><button type="submit">Rechercher</button></form>
-  <div className="quicklinks"><Link href="/dossiers/astreinte">Pavé Astreinte</Link><Link href="/dossiers/temps-de-travail">Pavé Temps de travail</Link><Link href="/recherche?q=PERS+793">Repas / déplacements</Link><Link href="/recherche?q=PERS+846">Discipline</Link><Link href="/jurisprudence">Toutes les jurisprudences</Link></div>
+  <section className="question-head"><span>💬</span><div><div className="eyebrow">Pose ta question normalement</div><h1>Qu’est-ce que tu veux vérifier ?</h1><p>Le moteur cherche le texte principal, puis les textes qui doivent être lus avec lui. Tu n’as pas besoin de connaître les références.</p></div></section>
+  <form className="ask-box" action="/recherche"><textarea name="q" defaultValue={q} autoFocus placeholder="Ex. J’ai travaillé en astreinte, j’arrive à 48 h jeudi et on veut me faire poser un RTT. Quels textes s’appliquent ?" aria-label="Ta question"/><button type="submit">Analyser ma question <span>→</span></button></form>
+  <div className="quick-asks"><span>Exemples :</span><Link href="/recherche?q=Ma+pause+de+midi+est+coup%C3%A9e+par+une+intervention">Pause coupée</Link><Link href="/recherche?q=Je+travaille+%C3%A0+18h30+ai-je+droit+au+repas+PERS+793">Repas à 18h30</Link><Link href="/recherche?q=Je+d%C3%A9passe+48+h+en+sortie+d%27astreinte">48 h + astreinte</Link></div>
+
   {q&&<>
-   {top&&<section className="reader search-answer"><div className="eyebrow">Réponse orientée dossier</div><h2>{top.title}</h2><p>{top.subtitle}</p><p>{top.sections[0]?.text}</p><Link className="source" href={`/dossiers/${top.slug}`}>Ouvrir le dossier complet →</Link></section>}
-   <section><h2 className="section-title">Textes applicables ou associés ({docs.length})</h2><div className="results">{docs.length?docs.map(({d})=><Link className="result" href={`/textes/${d.id}`} key={d.id}><div><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<strong>{d.ref}</strong>}</div><h3>{d.title}</h3><p>{d.explanation?.simple||'Référence fournie dans le corpus. Ouvrir la fiche pour voir son niveau, son origine et les liens disponibles.'}</p></Link>):<p>Aucun texte retrouvé.</p>}</div></section>
-   <section className="reader"><h2>Jurisprudence vérifiée ({cases.length})</h2>{cases.length?cases.map(({j})=><article className="case" key={j.id}><h3>{j.court} — {j.date} · n° {j.number}</h3><p><strong>Question :</strong> {j.issue}</p><p><strong>Rendu :</strong> {j.result}</p><p><strong>Portée :</strong> {j.scope}</p>{j.judgment?.amounts?.length>0&&<div className="amounts">{j.judgment.amounts.map(([label,amount])=><div className="amount-row" key={label}><span>{label}</span><strong>{amount}</strong></div>)}</div>}<a className="source" href={j.url} target="_blank" rel="noopener noreferrer">Décision source ↗</a></article>):<p className="muted">Aucune jurisprudence vérifiée ne correspond encore à cette recherche.</p>}</section>
+   <section className="answer-map">
+     <div className="answer-map-head"><span>🧭</span><div><small>CARTE DE TA QUESTION</small><h2>{relationSummary(packs)||'Voici les textes retrouvés pour ta question.'}</h2></div></div>
+     {packs.length>0&&<div className="pack-row">{packs.map((pack,i)=><div className="pack-pill" key={pack.id}><b>{pack.icon}</b><span>{pack.label}</span>{i<packs.length-1&&<i>＋</i>}</div>)}</div>}
+     <div className="answer-stats"><div><strong>{primary.length}</strong><span>textes à lire ensemble</span></div><div><strong>{extensions.length}</strong><span>modifications / extensions</span></div><div><strong>{cases.length}</strong><span>décisions reliées</span></div></div>
+   </section>
+
+   {top&&<section className="plain-answer"><div className="plain-icon">💡</div><div><span className="section-kicker">D’abord, en clair</span><h2>{top.title}</h2><p className="plain-lead">{top.subtitle}</p>{top.sections.slice(0,2).map((s,i)=><div className="plain-point" key={i}><b>{i+1}</b><p><strong>{s.title.replace(/^\d+\.\s*/, '')}</strong><br/>{s.text}</p></div>)}<Link href={`/dossiers/${top.slug}`}>Voir le guide complet →</Link></div></section>}
+
+   <section className="correlation-section">
+     <div className="section-heading"><div><span className="section-kicker">Le cœur de la réponse</span><h2>Ces textes doivent être lus ensemble</h2></div><p>Ils ne disent pas tous la même chose : chacun apporte une pièce de la règle.</p></div>
+     {primary.length?<div className="correlation-grid">{primary.map(item=><DocCard key={item.d.id} item={item} label="À corréler"/>)}</div>:<p className="empty">Aucun bloc de corrélation prédéfini n’a encore été identifié. Les résultats textuels sont affichés plus bas.</p>}
+   </section>
+
+   {extensions.length>0&&<details className="extensions-box" open><summary><span>🔗</span><div><strong>Modifications, décisions d’extension et textes d’application</strong><small>{extensions.length} document{extensions.length>1?'s':''} à ne pas oublier</small></div><b>＋</b></summary><div className="extension-list">{extensions.map(item=><DocCard key={item.d.id} item={item} label="Complément"/>)}</div></details>}
+
+   <section className="case-search-section"><div className="section-heading"><div><span className="section-kicker">Ce que les juges en ont fait</span><h2>Jurisprudence reliée à la question</h2></div><Link className="section-link" href="/jurisprudence">Voir toutes les décisions →</Link></div><CaseBlock items={cases}/></section>
+
+   {other.length>0&&<details className="other-results"><summary>Voir aussi les autres textes contenant les mots de ma question ({other.length}) <span>＋</span></summary><div className="results">{other.map(item=><Link className="result" href={`/textes/${item.d.id}`} key={item.d.id}><div><span className={'stamp '+(scopeOf(item.d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(item.d))}</span>{item.d.ref&&<strong>{item.d.ref}</strong>}</div><h3>{item.d.title}</h3><p>{item.d.explanation?.simple||'Ce texte contient des éléments correspondant aux mots de ta question.'}</p></Link>)}</div></details>}
   </>}
  </>;
 }
