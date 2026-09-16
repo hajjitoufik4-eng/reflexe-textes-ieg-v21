@@ -1,5 +1,37 @@
 import Link from 'next/link';
 import './globals.css';
 import './extras.css';
-export const metadata={title:{default:'Réflexe IEG — Textes et droits',template:'%s · Réflexe IEG'},description:'Textes IEG et GRDF, explications, originaux et jurisprudence.'};
-export default function Layout({children}){return <html lang="fr"><body><a className="skip" href="#contenu">Aller au contenu</a><header><Link className="brand" href="/"><span aria-hidden="true">⚖️</span> Réflexe <span>IEG</span></Link><nav className="topnav"><Link href="/dossiers/astreinte">Astreinte</Link><Link href="/dossiers/temps-de-travail">Temps de travail</Link><Link href="/corpus/ieg">IEG</Link><Link href="/corpus/grdf">GRDF</Link><Link href="/jurisprudence">Jurisprudence</Link><Link href="/recherche">🔎 Recherche</Link></nav></header><main id="contenu">{children}</main><footer>Réflexe IEG · Source originale + niveau juridique + explication + jurisprudence lorsqu’elle est pertinente.</footer></body></html>}
+
+export const metadata={
+  title:{default:'Réflexe IEG — Tes droits, simplement',template:'%s · Réflexe IEG'},
+  description:'Comprendre simplement les textes IEG et GRDF, retrouver la source originale et la jurisprudence utile.'
+};
+
+export default function Layout({children}){
+  return <html lang="fr"><body>
+    <a className="skip" href="#contenu">Aller au contenu</a>
+    <header className="site-header">
+      <Link className="brand" href="/" aria-label="Réflexe IEG — Accueil">
+        <span className="brand-logo" aria-hidden="true"><b>R</b><i>⚡</i></span>
+        <span className="brand-copy"><strong>Réflexe</strong><small>TEXTES IEG</small></span>
+      </Link>
+      <nav className="topnav" aria-label="Navigation principale">
+        <Link href="/#themes">Comprendre</Link>
+        <Link href="/corpus/ieg">Textes IEG</Link>
+        <Link href="/corpus/grdf">GRDF</Link>
+        <Link href="/jurisprudence">Décisions</Link>
+        <Link className="nav-search" href="/recherche">🔎 Rechercher</Link>
+      </nav>
+    </header>
+    <main id="contenu">{children}</main>
+    <footer>
+      <strong>Réflexe IEG</strong><span>Comprendre d’abord. Vérifier la source ensuite.</span>
+    </footer>
+    <nav className="mobile-nav" aria-label="Navigation mobile">
+      <Link href="/"><span>⌂</span><small>Accueil</small></Link>
+      <Link href="/recherche"><span>⌕</span><small>Chercher</small></Link>
+      <Link href="/#themes"><span>▦</span><small>Thèmes</small></Link>
+      <Link href="/jurisprudence"><span>⚖</span><small>Décisions</small></Link>
+    </nav>
+  </body></html>
+}
