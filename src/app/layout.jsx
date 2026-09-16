@@ -6,6 +6,7 @@ import './catalogue.css';
 import './law.css';
 import './search.css';
 import './text.css';
+import './install.css';
 
 export const metadata={
   title:{default:'Réflexe IEG — Tes droits, simplement',template:'%s · Réflexe IEG'},
