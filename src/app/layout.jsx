@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AppInstall from './components/AppInstall';
+import ReviewBanner from './components/ReviewBanner';
 import './globals.css';
 import './extras.css';
 import './catalogue.css';
@@ -34,6 +35,7 @@ export default function Layout({children}){
         <Link className="nav-search" href="/recherche">🔎 Rechercher</Link>
       </nav>
     </header>
+    <ReviewBanner/>
     <main id="contenu">{children}</main>
     <footer>
       <strong>Réflexe IEG</strong><span>Comprendre d’abord. Vérifier la source ensuite.</span>
