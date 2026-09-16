@@ -3,6 +3,7 @@ import data from '../../data/all-documents.js';
 import { jurisprudence } from '../../data/jurisprudence.js';
 import { dossiers } from '../../data/dossiers.js';
 import { scopeOf, scopeName } from '../../lib/catalogue.mjs';
+import { explanationFor } from '../../lib/explain.mjs';
 import { packsForQuery, correlationFor, relationSummary } from '../../data/legal-relations.js';
 
 const norm=(s='')=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -16,7 +17,7 @@ const aliases={
   '11h':['repos quotidien','11 h'],
   '11 h':['repos quotidien','11h'],
 };
-const docText=d=>norm([d.ref,d.title,d.theme,d.folder,d.kind,d.scopeLabel,d.origin,d.explanation?.heading,d.explanation?.simple,...(d.explanation?.points||[]),d.explanation?.related,...(d.relatedTexts||[]).map(x=>typeof x==='string'?x:x?.title)].filter(Boolean).join(' '));
+const docText=d=>{const x=explanationFor(d);return norm([d.ref,d.title,d.theme,d.folder,d.kind,d.scopeLabel,d.origin,x.heading,x.simple,...(x.points||[]),x.related,...(d.relatedTexts||[]).map(v=>typeof v==='string'?v:v?.title)].filter(Boolean).join(' '));};
 const caseText=j=>norm([j.court,j.date,j.number,j.title,j.issue,j.result,j.scope,...(j.topics||[])].join(' '));
 const dossierText=d=>norm([d.title,d.subtitle,...d.queries,...d.sections.flatMap(s=>[s.title,s.text])].join(' '));
 const tokens=q=>{const n=norm(q);const extra=Object.entries(aliases).filter(([k])=>n.includes(norm(k))).flatMap(([,v])=>v.map(norm));return [...new Set([...n.split(/\s+/).filter(Boolean),...extra.flatMap(x=>x.split(' '))])];};
@@ -26,7 +27,8 @@ const isExtension=d=>/décision d.?extension|decision d.?extension|texte remis a
 const refRegex=/\b(?:PERS\s*[- ]?\s*\d{1,4}[A-Z]?|DP\s*\d{1,2}\s*-\s*\d+[A-Z]?|N\s*\d{2}\s*-\s*\d+[A-Z]?)\b/gi;
 const canonRef=r=>String(r||'').toUpperCase().replace(/[\s-]+/g,m=>m.includes('-')?'-':'').replace(/^PERS-?/,'PERS').replace(/^DP(\d+)-(\d+)$/,'DP$1-$2').replace(/^N(\d+)-(\d+)$/,'N$1-$2');
 const refsIn=d=>{
-  const src=[d.ref,d.title,d.origin,d.explanation?.related,...(d.relatedTexts||[]).map(x=>typeof x==='string'?x:x?.title)].filter(Boolean).join(' ');
+  const x=explanationFor(d);
+  const src=[d.ref,d.title,d.origin,x.related,...(d.relatedTexts||[]).map(v=>typeof v==='string'?v:v?.title)].filter(Boolean).join(' ');
   const refs=[...(src.match(refRegex)||[])].map(canonRef);
   if(d.ref) refs.push(canonRef(d.ref));
   return [...new Set(refs.filter(Boolean))];
@@ -42,11 +44,11 @@ function CaseBlock({items}){
 }
 
 function DocCard({item,label}){
- const {d}=item;
+ const {d}=item; const x=explanationFor(d);
  return <Link className="correlation-doc" href={`/textes/${d.id}`}>
    <div className="correlation-top"><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<b>{d.ref}</b>}<em>{label}</em></div>
-   <h3>{d.explanation?.heading||d.title}</h3>
-   <p>{d.explanation?.simple||item.why||'Ce document complète la lecture juridique de ta question.'}</p>
+   <h3>{x.heading||d.title}</h3>
+   <p>{x.simple}</p>
    {item.why&&<small><strong>Pourquoi il apparaît :</strong> {item.why}</small>}
    <i>Ouvrir la fiche →</i>
  </Link>;
@@ -105,7 +107,7 @@ export default async function Recherche({searchParams}){
 
    <section className="case-search-section"><div className="section-heading"><div><span className="section-kicker">Ce que les juges en ont fait</span><h2>Jurisprudence reliée à la question</h2></div><Link className="section-link" href="/jurisprudence">Voir toutes les décisions →</Link></div><CaseBlock items={cases}/></section>
 
-   {other.length>0&&<details className="other-results"><summary>Voir aussi les autres textes contenant les mots de ma question ({other.length}) <span>＋</span></summary><div className="results">{other.map(item=><Link className="result" href={`/textes/${item.d.id}`} key={item.d.id}><div><span className={'stamp '+(scopeOf(item.d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(item.d))}</span>{item.d.ref&&<strong>{item.d.ref}</strong>}</div><h3>{item.d.title}</h3><p>{item.d.explanation?.simple||'Ce texte contient des éléments correspondant aux mots de ta question.'}</p></Link>)}</div></details>}
+   {other.length>0&&<details className="other-results"><summary>Voir aussi les autres textes contenant les mots de ma question ({other.length}) <span>＋</span></summary><div className="results">{other.map(item=>{const x=explanationFor(item.d);return <Link className="result" href={`/textes/${item.d.id}`} key={item.d.id}><div><span className={'stamp '+(scopeOf(item.d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(item.d))}</span>{item.d.ref&&<strong>{item.d.ref}</strong>}</div><h3>{item.d.title}</h3><p>{x.simple}</p></Link>})}</div></details>}
   </>}
  </>;
 }
