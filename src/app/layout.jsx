@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AppInstall from './components/AppInstall';
 import './globals.css';
 import './extras.css';
 import './catalogue.css';
@@ -8,8 +9,13 @@ import './text.css';
 
 export const metadata={
   title:{default:'Réflexe IEG — Tes droits, simplement',template:'%s · Réflexe IEG'},
-  description:'Comprendre simplement les textes IEG et GRDF, retrouver la source originale et la jurisprudence utile.'
+  description:'Comprendre simplement les textes IEG et GRDF, retrouver la source originale et la jurisprudence utile.',
+  manifest:'/manifest.webmanifest',
+  icons:{icon:'/app-icon.svg',apple:'/app-icon.svg'},
+  appleWebApp:{capable:true,title:'Réflexe IEG',statusBarStyle:'default'}
 };
+
+export const viewport={themeColor:'#173b72',width:'device-width',initialScale:1,viewportFit:'cover'};
 
 export default function Layout({children}){
   return <html lang="fr"><body>
@@ -37,5 +43,6 @@ export default function Layout({children}){
       <Link href="/#themes"><span>▦</span><small>Thèmes</small></Link>
       <Link href="/jurisprudence"><span>⚖</span><small>Décisions</small></Link>
     </nav>
+    <AppInstall/>
   </body></html>
 }
