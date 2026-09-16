@@ -1,4 +1,4 @@
-import { explanationFor as baseExplanationFor } from './explain.mjs';
+import { explanationFor as baseExplanationFor } from './explain-base.mjs';
 
 const N=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const H=d=>N(`${d?.ref||''} ${d?.title||''} ${d?.kind||''} ${d?.origin||''}`);
