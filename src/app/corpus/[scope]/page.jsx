@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import data from '../../../data/all-documents.js';
 import { topics, levels, scopeName, tag, filterDocuments, catalogueUrl, safeUrl } from '../../../lib/catalogue.mjs';
+import { explanationFor } from '../../../lib/explain.mjs';
 const single = (v) => (typeof v === 'string' ? v : '');
 const icons={astreinte:'⏱️',temps:'🕒',argent:'💶',discipline:'⚠️',sante:'🦺',mandats:'🗣️',carriere:'📈',famille:'👨‍👩‍👧',retraite:'🌤️',avantages:'⚡',regles:'📚',autres:'🗂️'};
 const colors={astreinte:'blue',temps:'teal',argent:'gold',discipline:'red',sante:'green',mandats:'purple',carriere:'blue',famille:'pink',retraite:'orange',avantages:'teal',regles:'purple',autres:'orange'};
@@ -33,11 +34,11 @@ export default async function Catalogue({ params, searchParams }) {
         </Link>})}</div>
     </>:<>
       <div className="catalogue-results-head"><Link className="back" href={catalogueUrl(scope,{level})}>← Tous les thèmes</Link><span>{list.length} résultat{list.length>1?'s':''}</span></div>
-      {list.slice(0,limit).map(d=>{const url=safeUrl(d.url);return <article className="row doc-row" key={d.id}>
-        <div className="doc-row-top"><span className={'stamp '+(scope==='grdf'?'grdf':'')}>{tag(d)}</span>{d.ref&&<b>{d.ref}</b>}</div>
+      {list.slice(0,limit).map(d=>{const url=safeUrl(d.url);const guide=explanationFor(d);return <article className="row doc-row" key={d.id}>
+        <div className="doc-row-top"><span className={'stamp '+(scope==='grdf'?'grdf':'')}>{tag(d)}</span>{d.ref&&<b>{d.ref}</b>}<em className={guide.mode==='verified'?'verified-pill':'guided-pill'}>{guide.mode==='verified'?'✅ Expliqué':'🧭 Guidé'}</em></div>
         <strong>{d.title}</strong>
-        {d.explanation?.simple&&<p className="doc-simple">{d.explanation.simple}</p>}
-        <div className="doc-actions"><Link className="source explanation-button" href={'/textes/'+d.id}>💡 {d.explanation?'Comprendre':'Voir la fiche'}</Link>{url?<a className="source" href={url} target="_blank" rel="noopener noreferrer">📄 Texte original ↗</a>:d.providedArchive?<span className="status supplied">Original fourni</span>:<span className="status">Original à relier</span>}</div>
+        <p className="doc-simple">{guide.simple}</p>
+        <div className="doc-actions"><Link className="source explanation-button" href={'/textes/'+d.id}>💡 Comprendre</Link>{url?<a className="source" href={url} target="_blank" rel="noopener noreferrer">📄 Texte original ↗</a>:d.providedArchive?<span className="status supplied">Original fourni</span>:<span className="status">Original à relier</span>}</div>
       </article>})}
       {!list.length&&<div className="empty"><strong>Rien avec ces mots.</strong><p>Essaie plus simple : « repas », « repos », « astreinte », « sanction »…</p></div>}
       {list.length>limit&&<Link className="more" href={catalogueUrl(scope,{...state,limit:limit+12})}>Afficher davantage ↓</Link>}
