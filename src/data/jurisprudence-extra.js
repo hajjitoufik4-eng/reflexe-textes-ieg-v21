@@ -1,0 +1,72 @@
+export const extraJurisprudence = [
+  {
+    id:'JUR-CASS-20-21636',
+    topics:['temps de travail','48h','durée maximale','duree maximale','repos','astreinte'],
+    court:'Cour de cassation, chambre sociale',
+    date:'26 janvier 2022',
+    number:'20-21.636',
+    title:'Dépassement de la durée maximale hebdomadaire : droit à réparation',
+    issue:'Le salarié doit-il prouver un préjudice distinct lorsque la durée maximale hebdomadaire de travail a été dépassée ?',
+    result:'Cassation partielle. La Cour juge que le seul constat du dépassement de la durée maximale de travail ouvre droit à réparation, sans exiger la preuve d’un préjudice spécifique.',
+    scope:'Décision de principe utile lorsqu’un dépassement de la durée maximale hebdomadaire est établi. Elle ne fixe pas automatiquement le montant de la réparation.',
+    url:'https://www.legifrance.gouv.fr/juri/id/JURITEXT000045097657',
+    judgment:{result:'Cassation partielle sur le rejet de la demande de dommages-intérêts pour violation de la durée maximale du travail ; renvoi devant la cour d’appel de Bourges.',follow:[{label:'Suite',text:'Le résultat chiffré après renvoi n’est pas documenté dans cette fiche.'}],amounts:[]},
+    limit:'L’arrêt concernait les textes applicables à la période litigieuse. Le principe de réparation est à articuler avec les règles actuelles applicables au dossier examiné.'
+  },
+  {
+    id:'JUR-CASS-21-22281',
+    topics:['temps de travail','durée quotidienne','duree quotidienne','12h','repos','astreinte'],
+    court:'Cour de cassation, chambre sociale',
+    date:'11 mai 2023',
+    number:'21-22.281 / 21-22.912',
+    title:'Dépassement de la durée quotidienne maximale : droit à réparation',
+    issue:'Faut-il démontrer un préjudice particulier après constat d’un dépassement de la durée quotidienne maximale de travail ?',
+    result:'Cassation partielle. La Cour rappelle que le seul constat du dépassement de la durée maximale quotidienne de travail ouvre droit à réparation.',
+    scope:'Utile pour distinguer la preuve du dépassement et la preuve d’un préjudice : une fois le dépassement constaté, un préjudice spécifique n’a pas à être démontré pour ouvrir le droit à réparation.',
+    url:'https://www.legifrance.gouv.fr/juri/id/JURITEXT000047545802',
+    judgment:{result:'Cassation partielle et renvoi devant la cour d’appel de Paris autrement composée. L’arrêt comporte aussi un volet distinct relatif au licenciement d’une salariée enceinte.',follow:[{label:'28 juin 2023',text:'La Cour a ensuite rectifié une erreur matérielle sur un numéro de pourvoi, sans modifier la règle de fond.'}],amounts:[]},
+    limit:'La décision ne détermine pas à elle seule le montant de l’indemnisation dans une autre affaire.'
+  },
+  {
+    id:'JUR-CASS-21-22809',
+    topics:['repos','repos quotidien','temps de travail','astreinte','11h','12h'],
+    court:'Cour de cassation, chambre sociale',
+    date:'7 février 2024',
+    number:'21-22.809 / 21-22.994',
+    title:'Repos journalier conventionnel : le seul manquement ouvre droit à réparation',
+    issue:'Le salarié doit-il démontrer un préjudice spécifique lorsque le repos journalier conventionnel minimal n’a pas été respecté ?',
+    result:'Cassation partielle. La Cour juge que le seul constat que le salarié n’a pas bénéficié du repos journalier conventionnel de douze heures entre deux services ouvre droit à réparation.',
+    scope:'La décision porte sur un repos conventionnel de 12 h dans une autre convention collective. Elle confirme néanmoins l’importance autonome du droit au repos et de son respect effectif.',
+    url:'https://www.legifrance.gouv.fr/juri/id/JURITEXT000049130147',
+    judgment:{result:'Cassation du chef ayant refusé des dommages-intérêts pour manquement à l’obligation de sécurité et renvoi devant la cour d’appel de Paris autrement composée.',follow:[],amounts:[]},
+    limit:'Le repos conventionnel en cause était de 12 h et non le régime GRDF de 11 h. Il faut donc utiliser l’arrêt comme jurisprudence sur l’effet du manquement, pas comme texte fixant la durée applicable chez GRDF.'
+  },
+  {
+    id:'JUR-CASS-24-14319',
+    topics:['astreinte','temps de travail','repos','requalification','PERS530','PERS557','ZHA'],
+    court:'Cour de cassation, chambre sociale',
+    date:'14 mai 2025',
+    number:'24-14.319',
+    title:'Astreinte : les interventions régulières imposent d’examiner l’intensité réelle des contraintes',
+    issue:'Une cour d’appel peut-elle écarter la requalification de périodes d’astreinte sans examiner concrètement l’intensité des contraintes, alors que le salarié intervient régulièrement ?',
+    result:'Cassation partielle. La Cour reproche aux juges de ne pas avoir vérifié si les contraintes, compte tenu notamment des interventions régulières, affectaient objectivement et très significativement la liberté du salarié de gérer son temps.',
+    scope:'Cette décision prolonge l’approche concrète issue de la CJUE et de la Cour de cassation : fréquence des interventions et contraintes réelles doivent être examinées, sans automatisme de requalification.',
+    url:'https://www.legifrance.gouv.fr/juri/id/JURITEXT000051617804',
+    judgment:{result:'Cassation partielle des chefs relatifs notamment aux rappels de salaire, congés payés, dommages-intérêts temps de travail/sécurité et travail dissimulé ; renvoi devant la cour d’appel de Bordeaux.',follow:[{label:'Après renvoi',text:'Aucune décision de renvoi définitive n’est documentée ici.'}],amounts:[]},
+    limit:'L’arrêt n’affirme pas que toute astreinte avec interventions régulières est du temps de travail effectif : il impose une appréciation concrète de l’intensité des contraintes.'
+  },
+  {
+    id:'JUR-CASS-17-28763',
+    topics:['temps de travail','repos','preuve','durée maximale','duree maximale','astreinte'],
+    court:'Cour de cassation, chambre sociale',
+    date:'6 février 2019',
+    number:'17-28.763',
+    title:'Durées maximales et repos : la preuve du respect des seuils incombe à l’employeur',
+    issue:'Qui doit prouver le respect des seuils et plafonds de durée du travail et des temps de repos ?',
+    result:'Cassation partielle. La Cour rappelle que la preuve du respect des seuils et plafonds issus du droit de l’Union et des durées maximales fixées par le droit interne incombe à l’employeur.',
+    scope:'Jurisprudence utile pour les dossiers de durée du travail et de repos : le salarié peut produire ses éléments, mais la charge de démontrer le respect des plafonds protecteurs pèse sur l’employeur.',
+    url:'https://www.legifrance.gouv.fr/juri/id/JURITEXT000038137195',
+    judgment:{result:'Cassation partielle sur les chefs relatifs notamment au repos quotidien et au respect de la durée hebdomadaire maximale.',follow:[],amounts:[]},
+    limit:'Affaire relative à un régime de chambre de veille et d’équivalence ; la règle probatoire sur les seuils et plafonds est le point pertinent pour le corpus.'
+  }
+];
