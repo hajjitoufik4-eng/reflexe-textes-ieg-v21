@@ -1,0 +1,30 @@
+{
+  "name": "reflexe-textes-ieg",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "predev": "node scripts/prepare-assets.mjs",
+    "dev": "next dev --hostname 0.0.0.0",
+    "prebuild": "node scripts/prepare-assets.mjs",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run lint && npm run format:check && npm test && npm run build"
+  },
+  "dependencies": {
+    "next": "16.3.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
+    "prettier": "^3.0.0"
+  }
+}

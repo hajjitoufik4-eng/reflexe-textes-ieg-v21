@@ -1,0 +1,12 @@
+node_modules
+.next
+public
+documents
+prototype
+corpus-inventaire-2026-09-08
+corpus_applicable.xlsx
+data.js
+index.html
+LISEZ-MOI.txt
+package-lock.json
+src/data/corpus.json
