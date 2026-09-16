@@ -2,6 +2,7 @@ import Link from 'next/link';
 import data from '../../data/all-documents.js';
 import { jurisprudence } from '../../data/jurisprudence.js';
 import { dossiers } from '../../data/dossiers.js';
+import { publicLawFor } from '../../data/public-law.js';
 import { scopeOf, scopeName } from '../../lib/catalogue.mjs';
 import { explanationFor } from '../../lib/explain.mjs';
 import { packsForQuery, correlationFor, relationSummary } from '../../data/legal-relations.js';
@@ -34,6 +35,11 @@ const refsIn=d=>{
   return [...new Set(refs.filter(Boolean))];
 };
 
+function LawBlock({items}){
+ if(!items.length)return null;
+ return <section className="law-bridge search-law-bridge"><div className="ieg-bridge-head"><div className="ieg-bridge-icon">📘</div><div><span>Droit commun</span><h2>Les règles légales qui encadrent ta question</h2><p>Le moteur place le Code du travail et le droit européen avant les règles IEG et GRDF lorsqu’ils structurent le sujet.</p></div></div><div className="law-grid">{items.map(x=><a className="law-card" href={x.url} target="_blank" rel="noopener noreferrer" key={x.id}><div><span>{x.level}</span><b>{x.ref}</b></div><strong>{x.title}</strong><p>{x.simple}</p><small><strong>Pourquoi ici :</strong> {x.why}</small><i>Source officielle ↗</i></a>)}</div></section>;
+}
+
 function CaseBlock({items}){
  if(!items.length) return <p className="muted">Aucune décision vérifiée n’est encore reliée à cette recherche.</p>;
  return <div className="search-case-grid">{items.map(({j})=><article className="search-case" key={j.id}>
@@ -55,7 +61,7 @@ function DocCard({item,label}){
 }
 
 export default async function Recherche({searchParams}){
- const p=await searchParams; const q=(p?.q||'').trim(); const terms=tokens(q); const packs=q?packsForQuery(q):[];
+ const p=await searchParams; const q=(p?.q||'').trim(); const terms=tokens(q); const packs=q?packsForQuery(q):[]; const lawItems=q?publicLawFor(q):[];
  const lexical=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
  const maxScore=lexical[0]?.s||0;
  const strongest=lexical.filter(x=>x.s===maxScore).slice(0,10);
@@ -93,17 +99,19 @@ export default async function Recherche({searchParams}){
      <div className="answer-map-head"><span>🧭</span><div><small>CARTE DE TA QUESTION</small><h2>{relationSummary(packs)||'Le moteur a suivi les références trouvées dans le corpus pour reconstruire les textes liés.'}</h2></div></div>
      {packs.length>0&&<div className="pack-row">{packs.map((pack,i)=><div className="pack-pill" key={pack.id}><b>{pack.icon}</b><span>{pack.label}</span>{i<packs.length-1&&<i>＋</i>}</div>)}</div>}
      {seedRefs.length>0&&<div className="followed-refs"><small>Références suivies automatiquement :</small><div>{seedRefs.map(ref=><span key={ref}>{ref}</span>)}</div></div>}
-     <div className="answer-stats"><div><strong>{primary.length}</strong><span>textes à lire ensemble</span></div><div><strong>{extensions.length}</strong><span>modifications / extensions</span></div><div><strong>{cases.length}</strong><span>décisions reliées</span></div></div>
+     <div className="answer-stats"><div><strong>{lawItems.length}</strong><span>règles droit commun</span></div><div><strong>{primary.length}</strong><span>textes à lire ensemble</span></div><div><strong>{cases.length}</strong><span>décisions reliées</span></div></div>
    </section>
 
    {top&&<section className="plain-answer"><div className="plain-icon">💡</div><div><span className="section-kicker">D’abord, en clair</span><h2>{top.title}</h2><p className="plain-lead">{top.subtitle}</p>{top.sections.slice(0,2).map((s,i)=><div className="plain-point" key={i}><b>{i+1}</b><p><strong>{s.title.replace(/^\d+\.\s*/, '')}</strong><br/>{s.text}</p></div>)}<Link href={`/dossiers/${top.slug}`}>Voir le guide complet →</Link></div></section>}
 
+   <LawBlock items={lawItems}/>
+
    <section className="correlation-section">
-     <div className="section-heading"><div><span className="section-kicker">Le cœur de la réponse</span><h2>Ces textes doivent être lus ensemble</h2></div><p>Le moteur combine recherche directe, liens entre références et règles de corrélation.</p></div>
+     <div className="section-heading"><div><span className="section-kicker">IEG + GRDF</span><h2>Ces textes doivent être lus ensemble</h2></div><p>Le moteur combine recherche directe, liens entre références et règles de corrélation.</p></div>
      {primary.length?<div className="correlation-grid">{primary.map(item=><DocCard key={item.d.id} item={item} label={item.pack?'À corréler':'Lien détecté'}/>)}</div>:<p className="empty">Aucun lien juridique supplémentaire n’a été détecté automatiquement. Les résultats textuels sont affichés plus bas.</p>}
    </section>
 
-   {extensions.length>0&&<details className="extensions-box" open><summary><span>🔗</span><div><strong>Modifications, décisions d’extension et textes d’application</strong><small>{extensions.length} document{extensions.length>1?'s':''} relié{extensions.length>1?'s':''} automatiquement</small></div><b>＋</b></summary><div className="extension-list">{extensions.map(item=><DocCard key={item.d.id} item={item} label="Complément"/>)}</div></details>}
+   {extensions.length>0&&<details className="extensions-box"><summary><span>🔗</span><div><strong>Modifications, décisions d’extension et textes d’application</strong><small>{extensions.length} document{extensions.length>1?'s':''} relié{extensions.length>1?'s':''} automatiquement</small></div><b>＋</b></summary><div className="extension-list">{extensions.map(item=><DocCard key={item.d.id} item={item} label="Complément"/>)}</div></details>}
 
    <section className="case-search-section"><div className="section-heading"><div><span className="section-kicker">Ce que les juges en ont fait</span><h2>Jurisprudence reliée à la question</h2></div><Link className="section-link" href="/jurisprudence">Voir toutes les décisions →</Link></div><CaseBlock items={cases}/></section>
 
