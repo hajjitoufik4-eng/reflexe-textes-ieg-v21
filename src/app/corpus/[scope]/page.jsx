@@ -17,13 +17,22 @@ function unique(items){
  return [...m.values()];
 }
 
-function IegBridge({items,theme}){
+function IegBridge({items,theme,query}){
  if(!items.length)return null;
- return <section className="ieg-bridge">
-   <div className="ieg-bridge-head"><div className="ieg-bridge-icon">🔗</div><div><span>Socle IEG associé</span><h2>À lire aussi côté IEG / PERS</h2><p>Ces textes ne sont pas des règles GRDF. Ils apparaissent séparément parce qu’ils fondent, modifient ou complètent le sujet consulté.</p></div></div>
-   <div className="ieg-bridge-grid">{items.slice(0,8).map(({d,why})=>{const x=explanationFor(d);return <Link className="ieg-bridge-card" href={`/textes/${d.id}`} key={d.id}><div><span className="ieg-mini">IEG</span>{d.ref&&<b>{d.ref}</b>}</div><strong>{x.heading}</strong><p>{x.simple}</p>{why&&<small>{why}</small>}<i>Comprendre ce texte →</i></Link>})}</div>
-   {theme&&<Link className="ieg-bridge-more" href={catalogueUrl('ieg',{theme})}>Voir tous les textes IEG de ce thème →</Link>}
+ return <section className="ieg-bridge ieg-bridge-prominent">
+   <div className="ieg-bridge-head"><div className="ieg-bridge-icon">⚖️</div><div><span>Socle juridique IEG / branche</span><h2>Textes qui régissent aussi ce sujet</h2><p>Tu es dans l’espace GRDF, mais ces PERS, notes DP et circulaires IEG restent applicables au sujet recherché. Ils sont donc affichés automatiquement avec les textes propres à GRDF.</p></div></div>
+   <div className="ieg-bridge-grid">{items.slice(0,14).map(({d,why})=>{const x=explanationFor(d);return <Link className="ieg-bridge-card" href={`/textes/${d.id}`} key={d.id}><div><span className="ieg-mini">IEG</span>{d.ref&&<b>{d.ref}</b>}</div><strong>{x.heading}</strong><p>{x.simple}</p>{why&&<small><strong>Pourquoi ici :</strong> {why}</small>}<i>Comprendre ce texte →</i></Link>})}</div>
+   <div className="ieg-bridge-actions">{theme&&<Link className="ieg-bridge-more" href={catalogueUrl('ieg',{theme})}>Voir tous les textes IEG de ce thème →</Link>}{query&&<Link className="ieg-bridge-more" href={catalogueUrl('ieg',{query})}>Rechercher « {query} » dans tout le corpus IEG →</Link>}</div>
  </section>;
+}
+
+function GrdfDocs({list,limit}){
+ if(!list.length)return <div className="empty"><strong>Aucun texte GRDF direct avec ces mots.</strong><p>Le socle IEG correspondant reste affiché au-dessus lorsqu’il existe.</p></div>;
+ return <>{list.slice(0,limit).map(d=>{const url=safeUrl(d.url);const guide=explanationFor(d);return <article className="row doc-row" key={d.id}>
+   <div className="doc-row-top"><span className="stamp grdf">{tag(d)}</span>{d.ref&&<b>{d.ref}</b>}<em className={guide.mode==='verified'?'verified-pill':'guided-pill'}>{guide.mode==='verified'?'✅ Expliqué':'🧭 Guidé'}</em></div>
+   <strong>{d.title}</strong><p className="doc-simple">{guide.simple}</p>
+   <div className="doc-actions"><Link className="source explanation-button" href={'/textes/'+d.id}>💡 Comprendre</Link>{url?<a className="source" href={url} target="_blank" rel="noopener noreferrer">📄 Texte original ↗</a>:d.providedArchive?<span className="status supplied">Original fourni</span>:<span className="status">Original à relier</span>}</div>
+ </article>})}</>;
 }
 
 export default async function Catalogue({ params, searchParams }) {
@@ -42,44 +51,35 @@ export default async function Catalogue({ params, searchParams }) {
   if(scope==='grdf'){
     const relationQuery=[query,topic?.[1],topic?.[2],theme].filter(Boolean).join(' ');
     const packs=packsForQuery(relationQuery);
-    const byPack=data.filter(d=>scopeOf(d)==='ieg').map(d=>{const rel=correlationFor(d,packs);return rel?{d,why:rel.why,priority:0}:null}).filter(Boolean);
-    const byTheme=theme?filterDocuments(data,{scope:'ieg',theme,query:'',level:'all'}).map(d=>({d,why:'Même thème juridique : ce texte IEG peut constituer le socle ou un complément de la règle GRDF.',priority:1})):[];
-    const byQuery=query?filterDocuments(data,{scope:'ieg',theme:'',query,level:'all'}).map(d=>({d,why:'Ce texte IEG correspond directement aux mots de ta recherche dans l’espace GRDF.',priority:1})):[];
-    const essentials=!theme&&!query?['PERS77','PERS530','PERS557','PERS793','PERS846'].map(ref=>{
-      const d=data.find(x=>scopeOf(x)==='ieg'&&canon(x.ref)===ref&&!isExtension(x));
-      return d?{d,why:'Référence IEG importante souvent nécessaire pour comprendre l’application des règles d’entreprise.',priority:2}:null;
-    }).filter(Boolean):[];
-    iegAssociated=unique([...byPack,...byTheme,...byQuery,...essentials]).sort((a,b)=>a.priority-b.priority||Number(Boolean(b.d.explanation))-Number(Boolean(a.d.explanation))||String(a.d.ref||a.d.title).localeCompare(String(b.d.ref||b.d.title),'fr'));
+    const coreOrder=packs.flatMap(p=>p.refs||[]).map(canon);
+    const byPack=data.filter(d=>scopeOf(d)==='ieg').map(d=>{const rel=correlationFor(d,packs);if(!rel)return null;const idx=coreOrder.indexOf(canon(d.ref));return {d,why:rel.why,priority:idx>=0?idx:50};}).filter(Boolean);
+    const byTheme=theme?filterDocuments(data,{scope:'ieg',theme,query:'',level:'all'}).map(d=>({d,why:'Même thème juridique : ce texte IEG peut constituer le socle, une précision ou un complément de la règle GRDF.',priority:100})):[];
+    const byQuery=query?filterDocuments(data,{scope:'ieg',theme:'',query,level:'all'}).map(d=>({d,why:'Ce texte IEG correspond directement à ta recherche dans l’espace GRDF.',priority:80})):[];
+    const essentials=!theme&&!query?['PERS77','PERS530','PERS557','PERS793','PERS846'].map((ref,i)=>{const d=data.find(x=>scopeOf(x)==='ieg'&&canon(x.ref)===ref&&!isExtension(x));return d?{d,why:'Référence IEG structurante fréquemment nécessaire pour comprendre les règles appliquées dans l’entreprise.',priority:200+i}:null;}).filter(Boolean):[];
+    iegAssociated=unique([...byPack,...byQuery,...byTheme,...essentials]).sort((a,b)=>a.priority-b.priority||Number(Boolean(b.d.explanation))-Number(Boolean(a.d.explanation))||String(a.d.ref||a.d.title).localeCompare(String(b.d.ref||b.d.title),'fr'));
   }
 
   return <>
     <Link className="back" href="/">← Accueil</Link>
     <section className={`catalogue-head catalogue-${scope}`}>
       <span className="catalogue-logo">{scope==='ieg'?'IEG':'G'}</span>
-      <div><span className="section-kicker">{scope==='ieg'?'Statut & branche':'Entreprise GRDF'}</span><h1>{topic ? topic[1] : scope==='ieg'?'Les textes IEG, rangés simplement.':'Les règles GRDF, avec leur socle IEG.'}</h1><p>{topic?topic[2]:scope==='ieg'?`${total} références indexées. Tu peux chercher avec des mots normaux : repas, astreinte, sanction, congé…`:`${total} documents GRDF indexés. Les PERS et textes IEG utiles apparaissent automatiquement dans un bloc séparé « À lire aussi côté IEG ».`}</p></div>
+      <div><span className="section-kicker">{scope==='ieg'?'Statut & branche':'Entreprise GRDF'}</span><h1>{topic ? topic[1] : scope==='ieg'?'Les textes IEG, rangés simplement.':'Tes règles GRDF, avec les textes IEG qui les encadrent.'}</h1><p>{topic?topic[2]:scope==='ieg'?`${total} références indexées. Tu peux chercher avec des mots normaux : repas, astreinte, sanction, congé…`:`Cherche un sujet comme « astreinte ». Le site te montre à la fois les PERS / notes IEG qui le régissent et les accords, décisions et notes spécifiques à GRDF.`}</p></div>
     </section>
-    <form className="searchbox catalogue-search" action={'/corpus/' + scope}><span>🔎</span><label><span className="sr-only">Rechercher une référence, un titre ou un thème</span><input name="q" defaultValue={query} placeholder="Ex. repas, PERS 793, sanction, repos…" maxLength={300}/></label>{level !== 'all' && <input type="hidden" name="level" value={level}/>}<button>Trouver</button></form>
+    <form className="searchbox catalogue-search" action={'/corpus/' + scope}><span>🔎</span><label><span className="sr-only">Rechercher une référence, un titre ou un thème</span><input name="q" defaultValue={query} placeholder={scope==='grdf'?'Ex. astreinte, repos 11 h, repas, sanction…':'Ex. repas, PERS 793, sanction, repos…'} maxLength={300}/></label>{level !== 'all' && <input type="hidden" name="level" value={level}/>}<button>Trouver</button></form>
     {scope === 'grdf' && <nav className="levels" aria-label="Périmètre GRDF">{levels.map(([key,label])=><Link key={key} href={catalogueUrl(scope,{...state,level:key})} aria-current={level===key?'page':undefined}>{label}</Link>)}</nav>}
+
     {!theme&&!query?<>
-      <div className="catalogue-help"><strong>Je cherche par situation</strong><span>Choisis une carte. Les références juridiques viennent après.</span></div>
-      <div className="themes theme-app-grid">{topics.map(([key,title,description])=>{
-        const count=filterDocuments(data,{scope,theme:key,query:'',level}).length;
-        return <Link className={`theme theme-app tone-${colors[key]||'blue'}`} key={key} href={catalogueUrl(scope,{...state,theme:key})}>
-          <span className="theme-icon">{icons[key]||'📄'}</span><strong>{title}</strong><small>{description}</small><em>{count} texte{count>1?'s':''}</em>
-        </Link>})}</div>
-      {scope==='grdf'&&<IegBridge items={iegAssociated}/>} 
+      <div className="catalogue-help"><strong>Je cherche par situation</strong><span>Choisis une carte : dans GRDF, le site ajoutera automatiquement le socle IEG correspondant.</span></div>
+      <div className="themes theme-app-grid">{topics.map(([key,title,description])=>{const count=filterDocuments(data,{scope,theme:key,query:'',level}).length;return <Link className={`theme theme-app tone-${colors[key]||'blue'}`} key={key} href={catalogueUrl(scope,{...state,theme:key})}><span className="theme-icon">{icons[key]||'📄'}</span><strong>{title}</strong><small>{description}</small><em>{count} texte{count>1?'s':''} {scope==='grdf'?'GRDF':''}</em></Link>})}</div>
     </>:<>
-      <div className="catalogue-results-head"><Link className="back" href={catalogueUrl(scope,{level})}>← Tous les thèmes</Link><span>{list.length} résultat{list.length>1?'s':''}</span></div>
-      {scope==='grdf'&&<div className="grdf-section-label"><span>🏢</span><div><strong>Textes GRDF</strong><small>Règles d’entreprise, accords, décisions et notes GRDF correspondant à ta sélection.</small></div></div>}
-      {list.slice(0,limit).map(d=>{const url=safeUrl(d.url);const guide=explanationFor(d);return <article className="row doc-row" key={d.id}>
-        <div className="doc-row-top"><span className={'stamp '+(scope==='grdf'?'grdf':'')}>{tag(d)}</span>{d.ref&&<b>{d.ref}</b>}<em className={guide.mode==='verified'?'verified-pill':'guided-pill'}>{guide.mode==='verified'?'✅ Expliqué':'🧭 Guidé'}</em></div>
-        <strong>{d.title}</strong>
-        <p className="doc-simple">{guide.simple}</p>
-        <div className="doc-actions"><Link className="source explanation-button" href={'/textes/'+d.id}>💡 Comprendre</Link>{url?<a className="source" href={url} target="_blank" rel="noopener noreferrer">📄 Texte original ↗</a>:d.providedArchive?<span className="status supplied">Original fourni</span>:<span className="status">Original à relier</span>}</div>
-      </article>})}
-      {!list.length&&<div className="empty"><strong>Rien avec ces mots dans ce corpus.</strong><p>Essaie plus simple : « repas », « repos », « astreinte », « sanction »…</p></div>}
+      <div className="catalogue-results-head"><Link className="back" href={catalogueUrl(scope,{level})}>← Tous les thèmes</Link><span>{scope==='grdf'?`${list.length} GRDF + ${iegAssociated.length} IEG`:`${list.length} résultat${list.length>1?'s':''}`}</span></div>
+
+      {scope==='grdf'&&<IegBridge items={iegAssociated} theme={theme} query={query}/>} 
+
+      {scope==='grdf'?<section className="grdf-results-block"><div className="grdf-section-label"><span>🏢</span><div><strong>Textes spécifiques GRDF</strong><small>Accords, décisions, notes métier et règles d’entreprise correspondant au même sujet.</small></div></div><GrdfDocs list={list} limit={limit}/></section>:list.slice(0,limit).map(d=>{const url=safeUrl(d.url);const guide=explanationFor(d);return <article className="row doc-row" key={d.id}><div className="doc-row-top"><span className="stamp">{tag(d)}</span>{d.ref&&<b>{d.ref}</b>}<em className={guide.mode==='verified'?'verified-pill':'guided-pill'}>{guide.mode==='verified'?'✅ Expliqué':'🧭 Guidé'}</em></div><strong>{d.title}</strong><p className="doc-simple">{guide.simple}</p><div className="doc-actions"><Link className="source explanation-button" href={'/textes/'+d.id}>💡 Comprendre</Link>{url?<a className="source" href={url} target="_blank" rel="noopener noreferrer">📄 Texte original ↗</a>:d.providedArchive?<span className="status supplied">Original fourni</span>:<span className="status">Original à relier</span>}</div></article>})}
+
+      {scope==='ieg'&&!list.length&&<div className="empty"><strong>Rien avec ces mots dans ce corpus.</strong><p>Essaie plus simple : « repas », « repos », « astreinte », « sanction »…</p></div>}
       {list.length>limit&&<Link className="more" href={catalogueUrl(scope,{...state,limit:limit+12})}>Afficher davantage ↓</Link>}
-      {scope==='grdf'&&<IegBridge items={iegAssociated} theme={theme}/>} 
     </>}
   </>;
 }
