@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import './globals.css';
 import './extras.css';
+import './catalogue.css';
 
 export const metadata={
   title:{default:'Réflexe IEG — Tes droits, simplement',template:'%s · Réflexe IEG'},
