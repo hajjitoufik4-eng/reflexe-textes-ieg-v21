@@ -1,97 +1,183 @@
 import Link from 'next/link';
 
-const topics = [
-  { icon:'⏱️', tone:'blue', title:'Je suis d’astreinte', text:'Départ, intervention, ZHA, repos, 48 h…', href:'/dossiers/astreinte' },
-  { icon:'🕒', tone:'teal', title:'Mon temps de travail', text:'Horaires, pause, repos, heures sup, JRTT…', href:'/dossiers/temps-de-travail' },
-  { icon:'🍽️', tone:'orange', title:'Repas & déplacements', text:'PERS 793, repas du midi/soir, frais, trajet…', href:'/recherche?q=PERS+793+repas+d%C3%A9placement' },
-  { icon:'⚠️', tone:'red', title:'On me reproche quelque chose', text:'Sanction, rappel, EP1, EP2, procédure disciplinaire…', href:'/recherche?q=PERS+846+discipline+sanction' },
-  { icon:'💶', tone:'gold', title:'Salaire, primes & indemnités', text:'Majoration, indemnité, remboursement, barème…', href:'/recherche?q=prime+indemnit%C3%A9+r%C3%A9mun%C3%A9ration' },
-  { icon:'🦺', tone:'green', title:'Santé & sécurité', text:'Accident, chaleur, RPS, prévention, conditions de travail…', href:'/recherche?q=sant%C3%A9+s%C3%A9curit%C3%A9+conditions+de+travail' },
-  { icon:'🗣️', tone:'purple', title:'Je suis élu / représentant', text:'CSE, CSSCT, Proxi, déplacements, temps de mandat…', href:'/recherche?q=CSE+CSSCT+mandat+d%C3%A9placement' },
-  { icon:'👨‍👩‍👧', tone:'pink', title:'Famille & absences', text:'Enfant, congé, absence, parentalité, droits familiaux…', href:'/recherche?q=famille+enfant+cong%C3%A9+absence' },
+const hierarchy = [
+  {
+    n:'1', icon:'⚖️', title:'Droit commun & Europe',
+    text:'Le socle général : Code du travail, règles européennes et autres normes applicables.',
+    detail:'On commence ici pour savoir ce que la loi impose ou permet. Ensuite seulement on regarde ce que les textes IEG et GRDF précisent.'
+  },
+  {
+    n:'2', icon:'📘', title:'Statut & branche IEG',
+    text:'Statut national, PERS, Notes DP, Circulaires N et accords de branche.',
+    detail:'Ces textes organisent les règles propres aux IEG. Ils doivent être lus avec leur date, leur champ d’application et les textes qui les ont modifiés.'
+  },
+  {
+    n:'3', icon:'🏢', title:'GRDF',
+    text:'Accords, décisions, notes RH ou métier et règlement intérieur.',
+    detail:'Ils mettent en œuvre ou précisent les règles dans l’entreprise. Une note n’a pas le même rôle qu’un accord : l’application les sépare.'
+  },
+  {
+    n:'4', icon:'📍', title:'Local',
+    text:'Textes applicables à une direction, unité ou zone déterminée.',
+    detail:'Ils ne concernent que le périmètre prévu. Un texte plus local n’est pas automatiquement “plus fort” : on vérifie toujours les niveaux supérieurs.'
+  },
 ];
 
-const essentials = [
-  { icon:'🕒', ref:'PERS 77', title:'Travail, repos, congés', text:'Le texte historique à connaître sur les horaires, heures supplémentaires et repos.', href:'/textes/d111' },
-  { icon:'🍽️', ref:'PERS 793', title:'Frais de déplacement', text:'Le texte clé pour les repas et déplacements professionnels.', href:'/textes/d35' },
-  { icon:'📟', ref:'PERS 530', title:'Astreinte', text:'Le cadre historique de l’astreinte, des interventions et du logement imposé.', href:'/textes/d19' },
-  { icon:'🔔', ref:'PERS 557', title:'Astreinte mise à jour', text:'Action immédiate, interventions, repos hebdomadaire et compensation.', href:'/textes/d65' },
-  { icon:'📅', ref:'Accord 2011', title:'Temps de travail GRDF', text:'Le cadre national GRDF du temps de travail.', href:'/textes/d594' },
+const primaryThemes = [
+  {
+    icon:'🕒', tone:'blue', title:'Temps de travail & repos',
+    text:'Durées, repos, pauses, astreinte, RTT, congés…',
+    items:[
+      ['Temps de travail','temps de travail'],
+      ['Repos & pauses','repos quotidien pause'],
+      ['Astreinte','astreinte'],
+      ['Congés, RTT & CET','congé rtt cet'],
+    ]
+  },
+  {
+    icon:'💶', tone:'gold', title:'Rémunération & frais',
+    text:'Salaire, primes, repas, déplacements…',
+    items:[
+      ['Rémunération','rémunération'],
+      ['Repas','repas'],
+      ['Déplacements & frais','déplacement frais'],
+      ['Heures supplémentaires','heures supplémentaires contingent repos'],
+    ]
+  },
+  {
+    icon:'⚡', tone:'green', title:'Tarif agent & avantages',
+    text:'Énergie, résidence secondaire, logement…',
+    items:[
+      ['Tarif agent énergie','tarif agent avantage en nature'],
+      ['Résidence secondaire','résidence secondaire tarif particulier'],
+      ['Logement','logement imposé'],
+    ]
+  },
+  {
+    icon:'🧭', tone:'purple', title:'Carrière & emploi',
+    text:'Classification, mutation, mobilité, affectation…',
+    items:[
+      ['Classification & classement','classification'],
+      ['Mobilité, mutation & affectation','mutation mobilité affectation'],
+    ]
+  },
+  {
+    icon:'🦺', tone:'teal', title:'Santé & famille',
+    text:'Accident, maladie, handicap, parentalité…',
+    items:[
+      ['Accident du travail & maladie','accident du travail maladie'],
+      ['Handicap','handicap'],
+      ['Famille & parentalité','maternité paternité adoption'],
+      ['Enfant malade','enfant malade'],
+    ]
+  },
+  {
+    icon:'🗣️', tone:'pink', title:'Mandats & règles internes',
+    text:'CSE, CSSCT, droit syndical, discipline…',
+    items:[
+      ['CSE & CSSCT','cse cssct'],
+      ['Droit syndical & délégation','droit syndical délégation'],
+      ['Discipline & sanctions','discipline sanction'],
+    ]
+  },
 ];
+
+const moreThemes = [
+  {
+    icon:'🎓', tone:'blue', title:'Formation',
+    items:[['Formation & alternance','formation professionnelle alternance'],['Frais de stage','frais de stage']]
+  },
+  {
+    icon:'🌤️', tone:'gold', title:'Retraite & inactivité',
+    items:[['Retraite & inactivité','retraite inactivité']]
+  },
+  {
+    icon:'🏠', tone:'green', title:'Activités sociales',
+    items:[['CCAS, CAS & activités sociales','ccas activités sociales']]
+  },
+];
+
+function ThemeDrawer({theme}){
+  return <details className={`home-drawer drawer-${theme.tone}`}>
+    <summary>
+      <span className="drawer-icon" aria-hidden="true">{theme.icon}</span>
+      <span className="drawer-copy"><strong>{theme.title}</strong>{theme.text&&<small>{theme.text}</small>}</span>
+      <span className="drawer-open">Choisir</span>
+    </summary>
+    <div className="drawer-items">
+      {theme.items.map(([label,q])=><Link key={label} href={`/recherche?q=${encodeURIComponent(q)}`}>
+        <span>📁</span><strong>{label}</strong><i>→</i>
+      </Link>)}
+    </div>
+  </details>;
+}
 
 export default function Home() {
   return <>
-    <section className="home-hero">
+    <section className="home-hero home-hero-simple">
       <div className="hero-copy">
         <span className="hero-badge">⚡ Le droit IEG, sans jargon</span>
-        <h1>Une question au boulot ?<br/><span>Trouve la règle en 30 secondes.</span></h1>
-        <p>Pas besoin de connaître le numéro d’une PERS. Écris simplement ton problème : on te montre d’abord l’explication, puis le texte et la jurisprudence si elle existe.</p>
+        <h1>Pose une question simple.<br/><span>Découvre seulement ce dont tu as besoin.</span></h1>
+        <p>Une réponse claire d’abord. Les explications ensuite. Les textes seulement si tu veux aller plus loin.</p>
         <form className="hero-search" action="/recherche">
           <span aria-hidden="true">🔎</span>
-          <input name="q" placeholder="Ex. Ma pause est coupée par une intervention…" aria-label="Décris ta question"/>
-          <button>Voir mes droits</button>
+          <input name="q" placeholder="Ex. Ai-je droit à une indemnité de repas ?" aria-label="Décris ta question"/>
+          <button>Explique-moi</button>
         </form>
-        <div className="search-suggestions" aria-label="Exemples de recherches">
-          <Link href="/recherche?q=48+h+astreinte">48 h en astreinte</Link>
-          <Link href="/recherche?q=repas+18h30+PERS+793">Repas du soir</Link>
-          <Link href="/recherche?q=pause+m%C3%A9ridienne+PERS+77">Pause méridienne</Link>
+        <div className="hero-path">
+          <span><b>1</b> Je comprends</span>
+          <span><b>2</b> J’approfondis</span>
+          <span><b>3</b> Je vérifie le texte</span>
         </div>
       </div>
-      <div className="hero-visual" aria-hidden="true">
-        <div className="phone-card card-one"><span>🍽️</span><div><small>Repas</small><strong>Entre 18 h et 21 h ?</strong></div><b>→</b></div>
-        <div className="phone-card card-two"><span>⏱️</span><div><small>Astreinte</small><strong>Repos après intervention</strong></div><b>→</b></div>
-        <div className="phone-card card-three"><span>⚖️</span><div><small>Jurisprudence</small><strong>Voir le rendu concret</strong></div><b>→</b></div>
-        <div className="hero-stat"><strong>697</strong><span>références triées</span></div>
+      <div className="hero-guide" aria-hidden="true">
+        <div className="guide-face">R<span>⚡</span></div>
+        <div className="guide-bubble"><strong>Commence par ta question.</strong><p>Tu n’as pas besoin de connaître une PERS ou un accord.</p></div>
       </div>
     </section>
 
-    <section id="themes" className="home-section">
-      <div className="section-heading">
-        <div><span className="section-kicker">Commence ici</span><h2>Qu’est-ce qui t’arrive ?</h2></div>
-        <p>Choisis une situation. Pas un numéro de texte.</p>
+    <section className="home-section hierarchy-lite">
+      <div className="section-heading simple-heading">
+        <div><span className="section-kicker">Le repère essentiel</span><h2>Dans quel ordre lire les textes ?</h2></div>
+        <p>Quatre niveaux. Clique seulement si tu veux comprendre le rôle de chacun.</p>
       </div>
-      <div className="topic-grid">
-        {topics.map(t=><Link key={t.title} href={t.href} className={`topic-card tone-${t.tone}`}>
-          <span className="topic-icon" aria-hidden="true">{t.icon}</span>
-          <div><h3>{t.title}</h3><p>{t.text}</p></div>
-          <span className="topic-arrow" aria-hidden="true">›</span>
-        </Link>)}
+      <div className="hierarchy-line">
+        {hierarchy.map(h=><details key={h.n} className="hierarchy-mini">
+          <summary><span className="hier-num">{h.n}</span><span className="hier-icon">{h.icon}</span><strong>{h.title}</strong><small>{h.text}</small><i>+</i></summary>
+          <p>{h.detail}</p>
+        </details>)}
       </div>
+      <div className="hierarchy-note"><span>⚠️</span><p><strong>À retenir :</strong> un texte plus local n’est pas automatiquement prioritaire. Il faut vérifier sa matière, son champ d’application, sa date et les textes supérieurs qu’il met en œuvre.</p></div>
     </section>
 
-    <section className="how-section">
-      <div className="section-heading light-heading"><div><span className="section-kicker">Simple par principe</span><h2>Tu ne lis pas un texte de 20 pages pour avoir une réponse.</h2></div></div>
-      <div className="steps-grid">
-        <div className="step-card"><span>1</span><strong>On t’explique</strong><p>La règle avec des mots simples et un exemple concret.</p></div>
-        <div className="step-card"><span>2</span><strong>On te montre la preuve</strong><p>Article, PERS, accord GRDF ou texte de branche.</p></div>
-        <div className="step-card"><span>3</span><strong>On ajoute les décisions</strong><p>Jurisprudence, rendu et montants quand ils sont connus.</p></div>
-      </div>
+    <section className="read-lite">
+      <details>
+        <summary><span>🧠</span><div><small>Mode d’emploi</small><strong>Comment lire un texte sans être juriste ?</strong></div><b>Découvrir →</b></summary>
+        <div className="read-lite-grid">
+          <div><span>1</span><strong>Quel type de texte ?</strong><p>Accord, PERS, note, décision, article du Code… leur rôle n’est pas le même.</p></div>
+          <div><span>2</span><strong>À qui s’applique-t-il ?</strong><p>Branche entière, GRDF, site local, métier ou population précise.</p></div>
+          <div><span>3</span><strong>Est-il toujours à jour ?</strong><p>On vérifie la date, les modifications, remplacements et textes liés.</p></div>
+        </div>
+      </details>
     </section>
 
-    <section className="home-section essentials-section">
-      <div className="section-heading">
-        <div><span className="section-kicker">À garder sous la main</span><h2>Les textes qui reviennent tout le temps</h2></div>
-        <Link className="section-link" href="/corpus/ieg">Voir tous les textes →</Link>
+    <section id="themes" className="home-section folders-section">
+      <div className="section-heading simple-heading">
+        <div><span className="section-kicker">Explorer sans se perdre</span><h2>Choisis un domaine, puis un dossier</h2></div>
+        <p>Aucun catalogue de 100 textes : tu avances un niveau à la fois.</p>
       </div>
-      <div className="essential-scroll">
-        {essentials.map(e=><Link className="essential-card" href={e.href} key={e.ref}>
-          <span className="essential-icon">{e.icon}</span><span className="essential-ref">{e.ref}</span><h3>{e.title}</h3><p>{e.text}</p><b>Comprendre ce texte →</b>
-        </Link>)}
+      <div className="drawer-grid">
+        {primaryThemes.map(theme=><ThemeDrawer theme={theme} key={theme.title}/>)}
       </div>
+      <details className="more-domains">
+        <summary>Voir les autres domaines <span>＋</span></summary>
+        <div className="drawer-grid more-grid">{moreThemes.map(theme=><ThemeDrawer theme={theme} key={theme.title}/>)}</div>
+      </details>
     </section>
 
-    <section className="decision-banner">
-      <div className="decision-icon">⚖️</div>
-      <div><span className="section-kicker">Ce que les juges ont vraiment décidé</span><h2>La jurisprudence, avec le résultat concret.</h2><p>Cassation, renvoi, sommes accordées, limites de la décision : on évite les résumés trompeurs.</p></div>
-      <Link href="/jurisprudence">Voir les décisions <span>→</span></Link>
-    </section>
-
-    <section className="home-section raw-section">
-      <div className="section-heading"><div><span className="section-kicker">Pour aller à la source</span><h2>Tu connais déjà le texte ?</h2></div><p>Accède directement au corpus complet.</p></div>
-      <div className="source-doors">
-        <Link href="/corpus/ieg" className="source-door ieg-door"><span className="door-logo">IEG</span><div><strong>Statut & branche IEG</strong><p>PERS, notes DP, circulaires N, accords de branche…</p></div><b>→</b></Link>
-        <Link href="/corpus/grdf" className="source-door grdf-door"><span className="door-logo">G</span><div><strong>Textes GRDF</strong><p>Accords, décisions, notes métier et règles locales.</p></div><b>→</b></Link>
-      </div>
+    <section className="home-final">
+      <div><span>🔎</span><div><strong>Tu sais déjà ce que tu cherches ?</strong><p>Utilise la recherche libre. L’application répond d’abord, puis te laisse choisir jusqu’où tu veux aller.</p></div></div>
+      <Link href="/recherche">Ouvrir la recherche <span>→</span></Link>
     </section>
   </>;
 }
