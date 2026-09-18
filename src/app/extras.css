@@ -90,3 +90,29 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
   .folders-section{padding-top:34px}.drawer-grid,.more-grid{grid-template-columns:1fr}.home-drawer summary{min-height:0;padding:13px;grid-template-columns:41px 1fr}.drawer-icon{width:41px;height:41px}.drawer-copy strong{font-size:13px}.drawer-copy small{font-size:10px}.drawer-open{font-size:9px}
   .home-final{display:block;padding:16px}.home-final>a{display:block;text-align:center;margin-top:13px}
 }
+
+
+/* --- Navigation latérale des 24 dossiers --- */
+.app-frame{display:grid;grid-template-columns:270px minmax(0,1fr);align-items:start;max-width:1540px;margin:0 auto}
+.app-main{min-width:0}
+.dossier-sidebar{position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);overflow:auto;margin:12px 0 12px 12px;background:#fff;border:1px solid #e1e6ef;border-radius:20px;box-shadow:0 10px 30px rgba(30,45,86,.06);scrollbar-width:thin}
+.dossier-side-head{position:sticky;top:0;z-index:3;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between;padding:14px;border-bottom:1px solid #edf0f5}
+.dossier-side-head>div{display:flex;align-items:center;gap:9px}
+.dossier-side-head>div>span{width:38px;height:38px;border-radius:12px;background:#eef1ff;display:grid;place-items:center;font-size:18px}
+.dossier-side-head strong{display:block;font-size:12px}.dossier-side-head small{display:block;color:#818a9c;font-size:9px;margin-top:2px}
+.dossier-side-close{display:none;border:0;background:#f0f2f7;width:32px;height:32px;border-radius:10px;font-size:20px;color:#566078}
+.dossier-side-nav{padding:10px}
+.dossier-side-group{padding:6px 0 9px;border-bottom:1px solid #f0f2f6}.dossier-side-group:last-child{border-bottom:0}
+.dossier-side-group-title{display:flex;align-items:center;gap:7px;padding:5px 6px 7px;color:#6d778b}.dossier-side-group-title span{font-size:13px}.dossier-side-group-title strong{font-size:9px;text-transform:uppercase;letter-spacing:.75px}
+.dossier-side-links{display:grid;gap:2px}
+.dossier-side-links a{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;text-decoration:none;color:#354158;padding:7px 8px;border-radius:9px;font-size:10.5px;line-height:1.25}
+.dossier-side-links a i{font-style:normal;color:#9ba4b5;font-size:15px}.dossier-side-links a:hover{background:#f4f6ff;color:#344bb7}.dossier-side-links a.active{background:#e9edff;color:#334bc0;font-weight:850}.dossier-side-links a.active i{color:#334bc0}
+.dossier-mobile-button,.dossier-mobile-overlay{display:none}
+@media(max-width:1050px){
+ .app-frame{display:block;max-width:none}.dossier-sidebar{display:none}.dossier-mobile-button{display:flex;position:fixed;z-index:290;left:12px;bottom:74px;align-items:center;gap:7px;border:0;background:#253a9e;color:white;padding:10px 13px;border-radius:999px;box-shadow:0 12px 30px rgba(28,45,121,.25);font-size:10px}.dossier-mobile-button span{font-size:15px}
+ .dossier-mobile-overlay{display:block;position:fixed;inset:0;z-index:500;background:rgba(16,25,54,.4);backdrop-filter:blur(3px)}
+ .dossier-mobile-panel{position:absolute;left:0;top:0;bottom:0;width:min(86vw,340px);background:#fff;overflow:auto;box-shadow:20px 0 50px rgba(18,28,68,.24)}
+ .dossier-mobile-panel .dossier-side-close{display:grid;place-items:center}
+ .dossier-mobile-panel .dossier-side-head{top:0}.dossier-mobile-panel .dossier-side-nav{padding-bottom:30px}
+}
+@media(max-width:700px){.dossier-mobile-button{bottom:72px;left:9px;padding:9px 11px}}
