@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import data from '../src/data/all-documents.js';
+import { readFile } from 'node:fs/promises';
+import complement from '../src/data/corpus-complement.js';
 import { dossierCoverage, documentsForDossier } from '../src/data/dossier-packs.js';
+
+const base=JSON.parse(await readFile(new URL('../src/data/corpus.json',import.meta.url),'utf8'));
+const data=[...base,...complement];
 
 const refsFor=id=>documentsForDossier(data,id).map(x=>String(x.document.ref||'').replace(/[\s-]+/g,'').toUpperCase());
 
@@ -25,4 +29,10 @@ test('meal dossier keeps extension documents separate from main references',()=>
     assert.ok(hits.some(x=>x.relation.tier==='core'), `${ref}: missing core text`);
     assert.ok(hits.some(x=>/extension|enn/i.test(x.document.title||'')), `${ref}: missing extension document`);
   }
+});
+
+test('overtime dossier is mapped and has core sources',()=>{
+  const docs=documentsForDossier(data,'heures-sup');
+  assert.ok(docs.length>0);
+  assert.ok(docs.some(x=>x.relation.tier==='core'));
 });
