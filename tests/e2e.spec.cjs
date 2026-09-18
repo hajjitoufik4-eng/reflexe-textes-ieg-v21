@@ -95,7 +95,7 @@ test.describe('Réflexe IEG - parcours intuitif', () => {
     await page.goto('/');
 
     const more = page.locator('details.more-domains');
-    await more.locator('summary').click();
+    await more.locator(':scope > summary').click();
     await expect(more).toHaveAttribute('open', '');
 
     const drawers = page.locator('details.home-drawer');
