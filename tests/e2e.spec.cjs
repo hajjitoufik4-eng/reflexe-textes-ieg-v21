@@ -1,13 +1,19 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('Réflexe IEG - navigation dossiers', () => {
-  test('accueil court + barre latérale de 24 dossiers', async ({ page }) => {
+test.describe('Réflexe IEG - navigation intuitive', () => {
+  test('accueil court + barre latérale en 6 familles repliées', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Pose une question simple/i })).toBeVisible();
     await expect(page.locator('details.home-drawer')).toHaveCount(6);
 
-    const sideLinks=page.locator('.dossier-sidebar .dossier-side-links a');
-    await expect(sideLinks).toHaveCount(24);
+    const groups=page.locator('.dossier-sidebar .dossier-side-group-title');
+    await expect(groups).toHaveCount(6);
+    await expect(page.locator('.dossier-sidebar .dossier-side-links a')).toHaveCount(0);
+
+    await groups.nth(0).click();
+    await expect(page.locator('.dossier-sidebar .dossier-side-links a')).toHaveCount(4);
+    await groups.nth(0).click();
+    await expect(page.locator('.dossier-sidebar .dossier-side-links a')).toHaveCount(0);
 
     const hierarchy=page.locator('details.hierarchy-mini');
     await expect(hierarchy).toHaveCount(4);
@@ -19,7 +25,7 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     }
   });
 
-  test('accueil -> domaine -> page dossier Repas', async ({ page }) => {
+  test('accueil -> domaine -> page dossier Repas avec repères de navigation', async ({ page }) => {
     await page.goto('/');
     const pay=page.locator('details.home-drawer').filter({hasText:'Rémunération & frais'});
     await pay.locator('summary').click();
@@ -31,6 +37,8 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     await expect(page.locator('.dossier-page-hero')).toBeVisible();
     await expect(page.getByRole('heading',{name:'Repas',exact:true})).toBeVisible();
     await expect(page.locator('.dossier-sidebar a.active')).toContainText('Repas');
+    await expect(page.locator('.dossier-breadcrumb')).toContainText('Rémunération & frais');
+    await expect(page.locator('.dossier-breadcrumb')).toContainText('Repas');
   });
 
   test('page Repas garde PERS 375, 583 et 793 dans les textes essentiels', async ({ page }) => {
@@ -65,19 +73,23 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     await expect(primary.getByText('PERS793',{exact:true})).toBeVisible();
   });
 
-  test('mobile: bouton 24 dossiers ouvre la barre latérale et permet un accès direct', async ({ page }) => {
+  test('mobile: bouton Dossiers ouvre 6 familles puis accès direct à Astreinte', async ({ page }) => {
     await page.setViewportSize({width:390,height:844});
     await page.goto('/');
 
     const widths=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,inner:window.innerWidth}));
     expect(widths.scroll).toBeLessThanOrEqual(widths.inner+1);
 
-    await page.getByRole('button',{name:/24 dossiers/i}).click();
+    await page.locator('.dossier-mobile-button').click();
     const panel=page.locator('#dossier-mobile-panel');
     await expect(panel).toBeVisible();
-    await expect(panel.locator('.dossier-side-links a')).toHaveCount(24);
+    await expect(panel.locator('.dossier-side-group-title')).toHaveCount(6);
+    await expect(panel.locator('.dossier-side-links a')).toHaveCount(0);
 
+    await panel.locator('.dossier-side-group-title').filter({hasText:'Temps & organisation'}).click();
+    await expect(panel.locator('a[href="/dossiers/astreinte"]')).toBeVisible();
     await panel.locator('a[href="/dossiers/astreinte"]').click();
+
     await expect(page).toHaveURL(/\/dossiers\/astreinte$/);
     await expect(page.locator('.dossier-page-hero')).toBeVisible();
 
@@ -85,12 +97,19 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     expect(widths2.scroll).toBeLessThanOrEqual(widths2.inner+1);
   });
 
-  test('les 24 liens latéraux mènent tous à une vraie page dossier', async ({ page }) => {
+  test('les 24 dossiers restent tous accessibles sans être affichés ensemble', async ({ page }) => {
     test.setTimeout(120000);
     await page.goto('/');
-    const links=page.locator('.dossier-sidebar .dossier-side-links a');
+    const groupButtons=page.locator('.dossier-sidebar .dossier-side-group-title');
     const hrefs=[];
-    for(let i=0;i<await links.count();i++) hrefs.push(await links.nth(i).getAttribute('href'));
+
+    for(let i=0;i<await groupButtons.count();i++){
+      await groupButtons.nth(i).click();
+      const links=page.locator('.dossier-sidebar .dossier-side-links a');
+      for(let j=0;j<await links.count();j++) hrefs.push(await links.nth(j).getAttribute('href'));
+      await groupButtons.nth(i).click();
+    }
+
     expect(hrefs.length).toBe(24);
     expect(new Set(hrefs).size).toBe(24);
 
