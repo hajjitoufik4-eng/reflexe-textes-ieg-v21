@@ -121,12 +121,16 @@ export default async function Recherche({searchParams}){
     .map(x=>corrMap.get(x.d.id)||x)
     .sort((a,b)=>(b.s||0)-(a.s||0));
 
-  const direct=linked
+  const directAll=linked
     .filter(x=>!isExtension(x.d))
     .filter(x=>!x.dossierTier||x.dossierTier==='core');
 
-  const supplements=linked
-    .filter(x=>isExtension(x.d)||x.dossierTier==='related'||x.dossierTier==='direct');
+  const direct=directAll.slice(0,6);
+
+  const supplements=[
+    ...directAll.slice(6),
+    ...linked.filter(x=>isExtension(x.d)||x.dossierTier==='related'||x.dossierTier==='direct')
+  ].filter((x,i,a)=>a.findIndex(y=>y.d.id===x.d.id)===i);
 
   const other=lexical.filter(x=>!correlatedIds.has(x.d.id)).slice(0,30);
 
