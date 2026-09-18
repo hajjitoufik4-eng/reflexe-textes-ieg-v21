@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AppInstall from './components/AppInstall';
 import ReviewBanner from './components/ReviewBanner';
+import DossierSidebar from './components/DossierSidebar';
 import './globals.css';
 import './extras.css';
 import './catalogue.css';
@@ -36,10 +37,15 @@ export default function Layout({children}){
       </nav>
     </header>
     <ReviewBanner/>
-    <main id="contenu">{children}</main>
-    <footer>
-      <strong>Réflexe IEG</strong><span>Comprendre d’abord. Vérifier la source ensuite.</span>
-    </footer>
+    <div className="app-frame">
+      <DossierSidebar/>
+      <div className="app-main">
+        <main id="contenu">{children}</main>
+        <footer>
+          <strong>Réflexe IEG</strong><span>Comprendre d’abord. Vérifier la source ensuite.</span>
+        </footer>
+      </div>
+    </div>
     <nav className="mobile-nav" aria-label="Navigation mobile">
       <Link href="/"><span>⌂</span><small>Accueil</small></Link>
       <Link href="/recherche"><span>⌕</span><small>Chercher</small></Link>
