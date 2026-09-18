@@ -154,3 +154,6 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 @media(max-width:1050px){
   .dossier-mobile-button{max-width:78vw}.dossier-mobile-button strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+.dossier-breadcrumb{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0 12px;color:#7a8496;font-size:9.5px}
+.dossier-breadcrumb a{text-decoration:none;color:#4257bd;font-weight:800}.dossier-breadcrumb strong{color:#2d3953}.dossier-breadcrumb span{color:#a2aaba}
