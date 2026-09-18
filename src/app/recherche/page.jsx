@@ -3,7 +3,7 @@ import data from '../../data/all-documents.js';
 import { jurisprudence } from '../../data/jurisprudence.js';
 import { dossiers } from '../../data/dossiers.js';
 import { publicLawFor } from '../../data/public-law.js';
-import { dossierPacks, documentsForDossier } from '../../data/dossier-packs.js';
+import { dossierPacks, dossierPack as getDossierPack, documentsForDossier } from '../../data/dossier-packs.js';
 import { scopeOf, scopeName } from '../../lib/catalogue.mjs';
 import { explanationFor } from '../../lib/explain.mjs';
 import { packsForQuery, correlationFor } from '../../data/legal-relations.js';
@@ -83,7 +83,8 @@ export default async function Recherche({searchParams}){
   const q=(p?.q||'').trim();
   const terms=tokens(q);
   const packs=q?packsForQuery(q):[];
-  const dossierPack=q?packForQuery(q):null;
+  const forcedDossier=p?.dossier?getDossierPack(p.dossier):null;
+  const dossierPack=forcedDossier||(q?packForQuery(q):null);
   const lawItems=q?publicLawFor(q):[];
 
   const lexical=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
