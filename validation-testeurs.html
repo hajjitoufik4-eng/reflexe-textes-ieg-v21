@@ -23,6 +23,12 @@
 .feedbackActions button{border:0;border-radius:12px;padding:11px 14px;font-weight:900;cursor:pointer}
 .feedbackSend{background:#2f4fc4;color:#fff}.feedbackCopy{background:#eef1ff;color:#3149b8}.feedbackCancel{background:#f1f3f8;color:#536078}
 .feedbackHint{font-size:10px;color:#7b8597;line-height:1.45}
+.feedbackGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ratingRow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#f7f8fc;border:1px solid #e8ebf2;border-radius:12px;padding:10px 12px}
+.ratingRow span{font-size:12px;font-weight:800;color:#3d4960}
+.ratingRow select{width:auto;min-width:150px}
+.feedbackIntro{background:linear-gradient(135deg,#eef1ff,#fff8dc);border:1px solid #e1e6ef;border-radius:14px;padding:12px 13px;font-size:11px;line-height:1.5;color:#556176}
+@media(max-width:620px){.feedbackGrid{grid-template-columns:1fr}.ratingRow{grid-template-columns:1fr}.ratingRow select{width:100%}}
 .mobileMenu{display:none}
 @media(max-width:1000px){.app{display:block}.side{display:none}.main{padding:14px 12px 80px}.mobileMenu{display:block;position:fixed;z-index:50;left:12px;bottom:18px;border:0;background:#263b9e;color:#fff;padding:11px 14px;border-radius:999px;font-weight:850}.mobileDrawer{display:none;position:fixed;inset:0;background:rgba(16,24,55,.42);z-index:60}.mobileDrawer.open{display:block}.mobileDrawer .side{display:block;position:absolute;left:0;top:0;bottom:0;width:min(86vw,330px);height:auto;margin:0;border-radius:0}.hero{grid-template-columns:1fr}.guide{display:none}}
 @media(max-width:700px){.top small{display:none}.hero{padding:20px;border-radius:22px}.hero h1{font-size:39px}.search{display:grid;grid-template-columns:1fr}.search button{padding:12px}.hier{grid-template-columns:1fr 1fr}.cards,.docgrid,.subgrid{grid-template-columns:1fr}.heading h2{font-size:25px}.dhero h1{font-size:30px}}
@@ -36,16 +42,19 @@
 </div>
 <button class="mobileMenu" id="mobileMenu">🗂️ Dossiers</button>
 <div class="mobileDrawer" id="mobileDrawer"><aside class="side" id="mobileSide"></aside></div>
-<button class="feedbackBtn" id="feedbackBtn">💬 Signaler un problème</button>
+<button class="feedbackBtn" id="feedbackBtn">💬 Donner mon avis</button>
 <div class="feedbackOverlay" id="feedbackOverlay" aria-hidden="true">
   <div class="feedbackBox" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
     <div class="feedbackHead">
-      <div><h2 id="feedbackTitle">Ton retour sur Réflexe IEG</h2><p>Signale une erreur de contenu, un lien cassé, un problème d’ergonomie ou une idée d’amélioration.</p></div>
+      <div><h2 id="feedbackTitle">Ton avis compte pour la version finale</h2><p>Dis-nous ce qui fonctionne, ce qui doit être amélioré et ce qui manque. Tu peux aussi signaler une erreur précise.</p></div>
       <button class="feedbackClose" id="feedbackClose" aria-label="Fermer">×</button>
     </div>
     <div class="feedbackBody">
-      <label>Type de retour
+      <div class="feedbackIntro"><b>Objectif :</b> tes réponses serviront à décider ce qu’on garde, ce qu’on corrige et ce qu’on ajoute avant la version finale.</div>
+
+      <label>Quel type de retour veux-tu faire ?
         <select id="feedbackType">
+          <option>Avis global sur l’application</option>
           <option>Erreur dans un texte ou une information</option>
           <option>Lien ou document qui ne s’ouvre pas</option>
           <option>Navigation / ergonomie</option>
@@ -55,26 +64,54 @@
           <option>Autre</option>
         </select>
       </label>
-      <label>Qu’est-ce qui pose problème ?
-        <textarea id="feedbackMessage" placeholder="Ex. Dans le dossier Repas, je ne comprends pas la différence entre les deux textes / ce bouton est difficile à trouver / ce lien ne fonctionne pas…"></textarea>
+
+      <div class="feedbackGrid">
+        <div class="ratingRow"><span>Facilité d’utilisation</span><select id="ratingEase"><option value="">Non noté</option><option>1/5</option><option>2/5</option><option>3/5</option><option>4/5</option><option>5/5</option></select></div>
+        <div class="ratingRow"><span>Clarté des explications</span><select id="ratingClarity"><option value="">Non noté</option><option>1/5</option><option>2/5</option><option>3/5</option><option>4/5</option><option>5/5</option></select></div>
+        <div class="ratingRow"><span>Navigation / classement</span><select id="ratingNav"><option value="">Non noté</option><option>1/5</option><option>2/5</option><option>3/5</option><option>4/5</option><option>5/5</option></select></div>
+        <div class="ratingRow"><span>Utilité pour un agent IEG</span><select id="ratingUseful"><option value="">Non noté</option><option>1/5</option><option>2/5</option><option>3/5</option><option>4/5</option><option>5/5</option></select></div>
+      </div>
+
+      <label>Ce que tu as trouvé bien
+        <textarea id="feedbackLiked" placeholder="Ex. Les dossiers sont clairs, les sources sont faciles à retrouver, l’accueil est simple…"></textarea>
       </label>
-      <label>Importance
+
+      <label>Ce qui devrait être amélioré
+        <textarea id="feedbackImprove" placeholder="Ex. Je me suis perdu à cet endroit, l’écriture est trop petite, je ne comprends pas ce bouton…"></textarea>
+      </label>
+
+      <label>Ce qui manque selon toi
+        <textarea id="feedbackMissing" placeholder="Ex. Un thème, un texte, une fonction de recherche, une explication, un filtre…"></textarea>
+      </label>
+
+      <label>Pour la version finale, quelle amélioration est prioritaire ?
+        <textarea id="feedbackPriority" placeholder="Une seule priorité si possible : ce qu’il faudrait absolument corriger ou ajouter avant la sortie."></textarea>
+      </label>
+
+      <label>Erreur ou remarque précise sur la page actuelle (facultatif)
+        <textarea id="feedbackMessage" placeholder="Tu peux décrire ici un problème précis rencontré sur cette page."></textarea>
+      </label>
+
+      <label>Importance du problème signalé
         <select id="feedbackSeverity">
+          <option>Sans objet — avis général</option>
           <option>Faible — détail ou suggestion</option>
-          <option selected>Moyenne — gêne l’utilisation</option>
+          <option>Moyenne — gêne l’utilisation</option>
           <option>Forte — information fausse ou fonctionnalité bloquée</option>
         </select>
       </label>
+
       <label>Nom ou contact (facultatif)
         <input id="feedbackContact" placeholder="Prénom, e-mail ou autre moyen de te recontacter">
       </label>
+
       <div class="feedbackMeta" id="feedbackMeta"></div>
       <div class="feedbackActions">
-        <button class="feedbackSend" id="feedbackSend">Envoyer le retour</button>
-        <button class="feedbackCopy" id="feedbackCopy">Copier le retour</button>
+        <button class="feedbackSend" id="feedbackSend">Envoyer mon avis</button>
+        <button class="feedbackCopy" id="feedbackCopy">Copier mon avis</button>
         <button class="feedbackCancel" id="feedbackCancel">Annuler</button>
       </div>
-      <div class="feedbackHint">“Envoyer le retour” ouvre une fiche de signalement préremplie sur le dépôt GitHub du projet. “Copier le retour” permet de te l’envoyer par le canal de leur choix.</div>
+      <div class="feedbackHint">Les réponses sont structurées pour pouvoir comparer les retours des testeurs et décider des modifications à intégrer à la version finale.</div>
     </div>
   </div>
 </div>
@@ -147,16 +184,41 @@ function refreshFeedbackMeta(){
 function openFeedback(){refreshFeedbackMeta();feedbackOverlay.classList.add('open');feedbackOverlay.setAttribute('aria-hidden','false');setTimeout(()=>feedbackMessage.focus(),0)}
 function closeFeedback(){feedbackOverlay.classList.remove('open');feedbackOverlay.setAttribute('aria-hidden','true')}
 function feedbackBodyText(){
- const type=feedbackType.value, severity=feedbackSeverity.value, msg=feedbackMessage.value.trim(), contact=feedbackContact.value.trim();
- return '### Type de retour\n'+type+'\n\n### Importance\n'+severity+'\n\n### Page concernée\n'+feedbackPage()+'\n\n### Description\n'+(msg||'[À compléter]')+'\n\n### Contact testeur\n'+(contact||'Non renseigné')+'\n\n### Adresse de la page\n'+location.href+'\n\n---\nRetour envoyé depuis la version test utilisateurs de Réflexe IEG.';
+ const type=feedbackType.value;
+ const severity=feedbackSeverity.value;
+ const liked=feedbackLiked.value.trim();
+ const improve=feedbackImprove.value.trim();
+ const missing=feedbackMissing.value.trim();
+ const priority=feedbackPriority.value.trim();
+ const msg=feedbackMessage.value.trim();
+ const contact=feedbackContact.value.trim();
+ const ratings=[
+   ['Facilité d’utilisation',ratingEase.value||'Non noté'],
+   ['Clarté des explications',ratingClarity.value||'Non noté'],
+   ['Navigation / classement',ratingNav.value||'Non noté'],
+   ['Utilité pour un agent IEG',ratingUseful.value||'Non noté']
+ ].map(x=>'- '+x[0]+' : '+x[1]).join('\n');
+ return '## Retour utilisateur — Réflexe IEG\n\n'
+   +'### Type de retour\n'+type+'\n\n'
+   +'### Notes\n'+ratings+'\n\n'
+   +'### Ce qui fonctionne bien\n'+(liked||'Non renseigné')+'\n\n'
+   +'### Ce qui doit être amélioré\n'+(improve||'Non renseigné')+'\n\n'
+   +'### Ce qui manque\n'+(missing||'Non renseigné')+'\n\n'
+   +'### Priorité pour la version finale\n'+(priority||'Non renseigné')+'\n\n'
+   +'### Problème ou remarque précise\n'+(msg||'Aucun')+'\n\n'
+   +'### Importance\n'+severity+'\n\n'
+   +'### Page concernée\n'+feedbackPage()+'\n\n'
+   +'### Contact testeur\n'+(contact||'Non renseigné')+'\n\n'
+   +'### Adresse de la page\n'+location.href+'\n\n'
+   +'---\nRetour envoyé depuis la version test utilisateurs de Réflexe IEG pour préparation de la version finale.';
 }
 feedbackBtn.onclick=openFeedback;feedbackClose.onclick=closeFeedback;feedbackCancel.onclick=closeFeedback;
 feedbackOverlay.onclick=e=>{if(e.target===feedbackOverlay)closeFeedback()};
 feedbackSend.onclick=()=>{
- const msg=feedbackMessage.value.trim();
- if(!msg){feedbackMessage.focus();feedbackMessage.style.borderColor='#d65b5b';return}
- feedbackMessage.style.borderColor='';
- const title='[TEST UTILISATEUR] '+feedbackType.value+' — '+feedbackPage();
+ const hasOpinion=[feedbackLiked,feedbackImprove,feedbackMissing,feedbackPriority,feedbackMessage].some(x=>x.value.trim());
+ if(!hasOpinion){feedbackImprove.focus();feedbackImprove.style.borderColor='#d65b5b';return}
+ feedbackImprove.style.borderColor='';
+ const title='[AVIS TESTEUR] '+feedbackType.value+' — '+feedbackPage();
  const url='https://github.com/hajjitoufik4-eng/reflexe-textes-ieg-v21/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(feedbackBodyText());
  window.open(url,'_blank','noopener');
 };
