@@ -18,8 +18,8 @@ export const legalPacks=[
   {
     id:'repas', label:'Repas & déplacements', icon:'🍽️',
     triggers:['repas','déplacement','deplacement','frais','11 h et 13 h','11h 13h','18 h et 21 h','18h 21h','cantine'],
-    refs:['PERS793'], titles:[],
-    reason:'La PERS 793 fixe le droit de base ; sa décision d’extension et la jurisprudence doivent être lues avec elle lorsque la preuve ou l’ouverture du droit est discutée.'
+    refs:['PERS375','PERS583','PERS793'], titles:['indemnités de déplacement et de repas sans déplacement','indemnites de deplacement et de repas sans deplacement','abattements sur indemnités de repas','abattements sur indemnites de repas','indemnités de déplacement','indemnites de deplacement'],
+    reason:'Le sujet repas se lit avec plusieurs textes IEG complémentaires : règles sur les repas sans déplacement, abattements et déplacements. Aucun de ces textes ne doit être écarté automatiquement lorsqu’il traite directement de la situation.'
   },
   {
     id:'discipline', label:'Discipline & procédure', icon:'⚠️',
@@ -47,7 +47,7 @@ export function packsForQuery(query){
   const add=id=>{if(!found.some(p=>p.id===id)) found.push(legalPacks.find(p=>p.id===id));};
   if(/\bpers\s*530\b|\bpers530\b|\bpers\s*557\b|\bpers557\b|\bpers\s*849\b|\bpers849\b|\bpers\s*939\b|\bpers939\b/.test(q)) add('astreinte');
   if(/\bpers\s*77\b|\bpers77\b/.test(q)) add('temps');
-  if(/\bpers\s*793\b|\bpers793\b/.test(q)) add('repas');
+  if(/\bpers\s*375\b|\bpers375\b|\bpers\s*583\b|\bpers583\b|\bpers\s*793\b|\bpers793\b/.test(q)) add('repas');
   if(/\bpers\s*846\b|\bpers846\b/.test(q)) add('discipline');
   if(found.some(p=>p.id==='astreinte')) add('temps');
   if(found.some(p=>p.id==='mandats')&&(/repas|frais|déplacement|deplacement/.test(q))) add('repas');
