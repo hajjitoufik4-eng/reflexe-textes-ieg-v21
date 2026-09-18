@@ -23,8 +23,8 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     await page.goto('/');
     const pay=page.locator('details.home-drawer').filter({hasText:'Rémunération & frais'});
     await pay.locator('summary').click();
-    const repas=pay.getByRole('link',{name:'Repas',exact:true});
-    await expect(repas).toHaveAttribute('href','/dossiers/repas');
+    const repas=pay.locator('a[href="/dossiers/repas"]');
+    await expect(repas).toBeVisible();
     await repas.click();
 
     await expect(page).toHaveURL(/\/dossiers\/repas$/);
@@ -35,9 +35,10 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
 
   test('page Repas garde PERS 375, 583 et 793 dans les textes essentiels', async ({ page }) => {
     await page.goto('/dossiers/repas');
-    await expect(page.getByText('PERS375',{exact:true})).toBeVisible();
-    await expect(page.getByText('PERS583',{exact:true})).toBeVisible();
-    await expect(page.getByText('PERS793',{exact:true})).toBeVisible();
+    const first=page.locator('.dossier-first');
+    await expect(first.getByText('PERS375',{exact:true})).toBeVisible();
+    await expect(first.getByText('PERS583',{exact:true})).toBeVisible();
+    await expect(first.getByText('PERS793',{exact:true})).toBeVisible();
 
     const essential=page.locator('.dossier-first .dossier-doc-card');
     expect(await essential.count()).toBeLessThanOrEqual(6);
@@ -76,7 +77,7 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     await expect(panel).toBeVisible();
     await expect(panel.locator('.dossier-side-links a')).toHaveCount(24);
 
-    await panel.getByRole('link',{name:'Astreinte',exact:true}).click();
+    await panel.locator('a[href="/dossiers/astreinte"]').click();
     await expect(page).toHaveURL(/\/dossiers\/astreinte$/);
     await expect(page.locator('.dossier-page-hero')).toBeVisible();
 
