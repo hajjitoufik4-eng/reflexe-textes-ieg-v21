@@ -1,0 +1,39 @@
+name: E2E
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  browser-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start app
+        run: |
+          npm run start > /tmp/reflexe-next.log 2>&1 &
+          echo $! > /tmp/reflexe-next.pid
+      - name: Wait for app
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/reflexe-next.log
+          exit 1
+      - name: Run browser tests
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: npx playwright test tests/e2e.spec.cjs --reporter=line
+      - name: Show app log on failure
+        if: failure()
+        run: cat /tmp/reflexe-next.log || true
