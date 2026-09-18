@@ -3,48 +3,46 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import complement from '../src/data/corpus-complement.js';
 import { dossierPacks, documentsForDossier } from '../src/data/dossier-packs.js';
+import { dossierNavigation, allDossierLinks } from '../src/data/dossier-navigation.js';
 
 const base=JSON.parse(await readFile(new URL('../src/data/corpus.json',import.meta.url),'utf8'));
 const data=[...base,...complement];
 const home=await readFile(new URL('../src/app/page.jsx',import.meta.url),'utf8');
 
-const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-const homeQueries=[...home.matchAll(/\['([^']+)','([^']+)'\]/g)].map(m=>({label:m[1],query:m[2]}));
+test('the sidebar exposes exactly 24 direct dossier pages',()=>{
+  assert.equal(allDossierLinks.length,24);
+  assert.equal(dossierPacks.length,24);
+  const navIds=new Set(allDossierLinks.map(x=>x.slug));
+  const packIds=new Set(dossierPacks.map(x=>x.id));
+  assert.deepEqual([...navIds].sort(),[...packIds].sort());
+  assert.equal(dossierNavigation.length,6);
+});
 
-function packForQuery(query){
-  const q=norm(query);
-  return dossierPacks
-    .map(pack=>({pack,score:pack.triggers.reduce((n,t)=>n+(q.includes(norm(t))?Math.max(2,norm(t).split(' ').length):0),0)}))
-    .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score)[0]?.pack||null;
-}
-
-test('every homepage dossier click resolves to a non-empty dossier',()=>{
-  assert.ok(homeQueries.length>=20,'homepage should expose progressive dossier choices');
-  for(const item of homeQueries){
-    const pack=packForQuery(item.query);
-    assert.ok(pack,`${item.label}: no dossier pack for "${item.query}"`);
+test('every dossier page has source coverage',()=>{
+  for(const pack of dossierPacks){
     const docs=documentsForDossier(data,pack.id);
-    assert.ok(docs.length>0,`${item.label}: dossier ${pack.id} is empty`);
+    assert.ok(docs.length>0, `${pack.id} has no document`);
+    for(const ref of pack.coreRefs){
+      const expected=String(ref).replace(/[\s-]+/g,'').toUpperCase();
+      assert.ok(data.some(d=>String(d.ref||'').replace(/[\s-]+/g,'').toUpperCase()===expected), `${pack.id} missing curated core reference ${ref}`);
+    }
   }
 });
 
-test('meal path is complete before optional complements',()=>{
-  const pack=packForQuery('repas');
-  assert.equal(pack?.id,'repas');
+test('meal dossier keeps PERS 375, 583 and 793 in the essential core',()=>{
   const docs=documentsForDossier(data,'repas');
   const core=docs.filter(x=>x.relation.tier==='core'&&!/extension|enn/i.test(x.document.title||''));
   const refs=new Set(core.map(x=>String(x.document.ref||'').replace(/[\s-]+/g,'').toUpperCase()));
   for(const ref of ['PERS375','PERS583','PERS793']) assert.ok(refs.has(ref),`meal core missing ${ref}`);
 });
 
-test('homepage remains progressive rather than a text catalogue',()=>{
+test('homepage stays intentionally short and does not list all 24 dossiers',()=>{
   assert.ok(home.includes('Choisis un domaine, puis un dossier'));
-  assert.ok(home.includes('Aucun catalogue de 100 textes'));
-  assert.ok(home.includes('<details'));
+  assert.ok(home.includes('Les 24 dossiers sont disponibles en permanence dans la barre latérale'));
   const primaryStart=home.indexOf('const primaryThemes');
-  const moreStart=home.indexOf('const moreThemes');
-  const primaryBlock=home.slice(primaryStart,moreStart);
+  const drawerStart=home.indexOf('function ThemeDrawer');
+  const primaryBlock=home.slice(primaryStart,drawerStart);
   const primaryCount=(primaryBlock.match(/tone:'/g)||[]).length;
   assert.equal(primaryCount,6,'home should show only six primary domains initially');
+  assert.equal(home.includes('const moreThemes'),false);
 });
