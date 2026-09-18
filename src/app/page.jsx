@@ -28,29 +28,29 @@ const primaryThemes = [
     icon:'🕒', tone:'blue', title:'Temps de travail & repos',
     text:'Durées, repos, pauses, astreinte, RTT, congés…',
     items:[
-      ['Temps de travail','temps de travail'],
-      ['Repos & pauses','repos quotidien pause'],
+      ['Temps de travail','temps-travail'],
+      ['Repos & pauses','repos-pauses'],
       ['Astreinte','astreinte'],
-      ['Congés, RTT & CET','congé rtt cet'],
+      ['Congés, RTT & CET','conges-rtt-cet'],
     ]
   },
   {
     icon:'💶', tone:'gold', title:'Rémunération & frais',
     text:'Salaire, primes, repas, déplacements…',
     items:[
-      ['Rémunération','rémunération'],
+      ['Rémunération','remuneration'],
       ['Repas','repas'],
-      ['Déplacements & frais','déplacement frais'],
-      ['Heures supplémentaires','heures supplémentaires contingent repos'],
+      ['Déplacements & frais','deplacements'],
+      ['Heures supplémentaires','heures-sup'],
     ]
   },
   {
     icon:'⚡', tone:'green', title:'Tarif agent & avantages',
     text:'Énergie, résidence secondaire, logement…',
     items:[
-      ['Tarif agent énergie','tarif agent avantage en nature'],
-      ['Résidence secondaire','résidence secondaire tarif particulier'],
-      ['Logement','logement imposé'],
+      ['Tarif agent énergie','tarif-agent'],
+      ['Résidence secondaire','residence-secondaire'],
+      ['Logement','logement'],
     ]
   },
   {
@@ -58,42 +58,27 @@ const primaryThemes = [
     text:'Classification, mutation, mobilité, affectation…',
     items:[
       ['Classification & classement','classification'],
-      ['Mobilité, mutation & affectation','mutation mobilité affectation'],
+      ['Mobilité, mutation & affectation','mobilite'],
     ]
   },
   {
     icon:'🦺', tone:'teal', title:'Santé & famille',
     text:'Accident, maladie, handicap, parentalité…',
     items:[
-      ['Accident du travail & maladie','accident du travail maladie'],
+      ['Accident du travail & maladie','accident-maladie'],
       ['Handicap','handicap'],
-      ['Famille & parentalité','maternité paternité adoption'],
-      ['Enfant malade','enfant malade'],
+      ['Famille & parentalité','famille'],
+      ['Enfant malade','enfant-malade'],
     ]
   },
   {
     icon:'🗣️', tone:'pink', title:'Mandats & règles internes',
     text:'CSE, CSSCT, droit syndical, discipline…',
     items:[
-      ['CSE & CSSCT','cse cssct'],
-      ['Droit syndical & délégation','droit syndical délégation'],
-      ['Discipline & sanctions','discipline sanction'],
+      ['CSE & CSSCT','cse-cssct'],
+      ['Droit syndical & délégation','droit-syndical'],
+      ['Discipline & sanctions','discipline'],
     ]
-  },
-];
-
-const moreThemes = [
-  {
-    icon:'🎓', tone:'blue', title:'Formation',
-    items:[['Formation & alternance','formation professionnelle alternance'],['Frais de stage','frais de stage']]
-  },
-  {
-    icon:'🌤️', tone:'gold', title:'Retraite & inactivité',
-    items:[['Retraite & inactivité','retraite inactivité']]
-  },
-  {
-    icon:'🏠', tone:'green', title:'Activités sociales',
-    items:[['CCAS, CAS & activités sociales','ccas activités sociales']]
   },
 ];
 
@@ -105,7 +90,7 @@ function ThemeDrawer({theme}){
       <span className="drawer-open">Choisir</span>
     </summary>
     <div className="drawer-items">
-      {theme.items.map(([label,q])=><Link key={label} href={`/recherche?q=${encodeURIComponent(q)}`}>
+      {theme.items.map(([label,slug])=><Link key={label} href={`/dossiers/${slug}`}>
         <span>📁</span><strong>{label}</strong><i>→</i>
       </Link>)}
     </div>
@@ -169,10 +154,7 @@ export default function Home() {
       <div className="drawer-grid">
         {primaryThemes.map(theme=><ThemeDrawer theme={theme} key={theme.title}/>)}
       </div>
-      <details className="more-domains">
-        <summary>Voir les autres domaines <span>＋</span></summary>
-        <div className="drawer-grid more-grid">{moreThemes.map(theme=><ThemeDrawer theme={theme} key={theme.title}/>)}</div>
-      </details>
+      <div className="home-sidebar-hint"><span>🗂️</span><p><strong>Tu veux aller directement à un sujet précis ?</strong> Les 24 dossiers sont disponibles en permanence dans la barre latérale.</p></div>
     </section>
 
     <section className="home-final">
