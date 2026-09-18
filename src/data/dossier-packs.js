@@ -25,6 +25,13 @@ export const dossierPacks=[
     relatedRefs:['PERS96','PERS225'], relatedTitles:[]
   },
   {
+    id:'heures-sup', theme:'time', label:'Heures supplémentaires', subtitle:'Déclenchement, majorations, contingent annuel et contreparties en repos.',
+    triggers:['heures supplémentaires','heures supplementaires','contingent annuel','contrepartie obligatoire en repos','majoration heures'],
+    coreRefs:['PERS77'],
+    coreTitles:['accord national sur le temps de travail','note d’application de dispositions contenues dans l’accord temps de travail','note d application de dispositions contenues dans l accord temps de travail'],
+    relatedRefs:[], relatedTitles:[]
+  },
+  {
     id:'temps-travail', theme:'time', label:'Temps de travail', subtitle:'Durées, horaires et organisation générale du temps de travail.',
     triggers:['temps de travail','durée du travail','duree du travail','horaire','aménagement du temps de travail','amenagement du temps de travail'],
     coreRefs:['PERS77','DP31-98'],
