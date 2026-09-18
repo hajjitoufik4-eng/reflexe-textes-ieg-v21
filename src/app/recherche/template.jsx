@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { sendBetaEvent } from '../../lib/beta-events.js';
 
 export default function RechercheTemplate({children}){
-  const params=useSearchParams();
-  const q=(params.get('q')||'').trim();
   useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const q=(params.get('q')||'').trim();
     if(!q)return;
     let session='';
     try{
@@ -20,6 +19,6 @@ export default function RechercheTemplate({children}){
       page_path:window.location.pathname+window.location.search,
       session_id:session
     }).catch(()=>{});
-  },[q]);
+  },[]);
   return children;
 }
