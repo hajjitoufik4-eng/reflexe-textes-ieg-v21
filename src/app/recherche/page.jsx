@@ -13,7 +13,7 @@ const aliases={
   '48 h':['48h','duree maximale','temps de travail','repos'],
   'astreinte':['action immediate','pers530','pers557','pers849','pers939','zha','zone habitat','mres','intervention','repos'],
   'pause':['pers77','pause meridienne','temps de travail'],
-  'repas':['pers793','indemnite repas','deplacement'],
+  'repas':['pers375','pers583','pers793','indemnite repas','repas sans deplacement','deplacement'],
   'discipline':['pers846','sanction','ep1','ep2','reglement interieur'],
   '11h':['repos quotidien','11 h'],
   '11 h':['repos quotidien','11h'],
