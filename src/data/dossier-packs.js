@@ -67,6 +67,14 @@ export const dossierPacks=[
     relatedRefs:['PERS96','PERS225'], relatedTitles:[]
   },
   {
+    id:'residence-secondaire', theme:'benefits', label:'Résidence secondaire', subtitle:'Tarifs particuliers et avantages en nature appliqués à une résidence secondaire.',
+    triggers:['résidence secondaire','residence secondaire','tarif particulier résidence secondaire','tarif particulier residence secondaire'],
+    coreRefs:['PERS161'],
+    coreTitles:['avantages en nature','résidence secondaire','residence secondaire'],
+    relatedRefs:['PERS182','PERS198','PERS211','PERS274'],
+    relatedTitles:[]
+  },
+  {
     id:'logement', theme:'benefits', label:'Logement', subtitle:'Logement assigné ou imposé et règles directement associées.',
     triggers:['logement','logement imposé','logement impose','logements assignés','logements assignes'],
     coreRefs:['PERS444','DP31-33'],
