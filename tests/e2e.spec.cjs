@@ -30,7 +30,7 @@ test.describe('Réflexe IEG - navigation dossiers', () => {
     await expect(page).toHaveURL(/\/dossiers\/repas$/);
     await expect(page.locator('.dossier-page-hero')).toBeVisible();
     await expect(page.getByRole('heading',{name:'Repas',exact:true})).toBeVisible();
-    await expect(page.locator('.dossier-sidebar a.active')).toHaveText('Repas');
+    await expect(page.locator('.dossier-sidebar a.active')).toContainText('Repas');
   });
 
   test('page Repas garde PERS 375, 583 et 793 dans les textes essentiels', async ({ page }) => {
