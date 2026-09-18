@@ -3,9 +3,10 @@ import data from '../../data/all-documents.js';
 import { jurisprudence } from '../../data/jurisprudence.js';
 import { dossiers } from '../../data/dossiers.js';
 import { publicLawFor } from '../../data/public-law.js';
+import { dossierPacks, documentsForDossier } from '../../data/dossier-packs.js';
 import { scopeOf, scopeName } from '../../lib/catalogue.mjs';
 import { explanationFor } from '../../lib/explain.mjs';
-import { packsForQuery, correlationFor, relationSummary } from '../../data/legal-relations.js';
+import { packsForQuery, correlationFor } from '../../data/legal-relations.js';
 
 const norm=(s='')=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const aliases={
@@ -35,87 +36,165 @@ const refsIn=d=>{
   return [...new Set(refs.filter(Boolean))];
 };
 
+function packForQuery(query){
+  const q=norm(query);
+  if(!q) return null;
+  return dossierPacks
+    .map(pack=>({pack,score:pack.triggers.reduce((n,t)=>n+(q.includes(norm(t))?Math.max(2,norm(t).split(' ').length):0),0)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score)[0]?.pack||null;
+}
+
 function LawBlock({items}){
- if(!items.length)return null;
- return <section className="law-bridge search-law-bridge"><div className="ieg-bridge-head"><div className="ieg-bridge-icon">📘</div><div><span>Droit commun</span><h2>Les règles légales qui encadrent ta question</h2><p>Le moteur place le Code du travail et le droit européen avant les règles IEG et GRDF lorsqu’ils structurent le sujet.</p></div></div><div className="law-grid">{items.map(x=><a className="law-card" href={x.url} target="_blank" rel="noopener noreferrer" key={x.id}><div><span>{x.level}</span><b>{x.ref}</b></div><strong>{x.title}</strong><p>{x.simple}</p><small><strong>Pourquoi ici :</strong> {x.why}</small><i>Source officielle ↗</i></a>)}</div></section>;
+  if(!items.length)return null;
+  return <section className="law-bridge search-law-bridge"><div className="ieg-bridge-head"><div className="ieg-bridge-icon">📘</div><div><span>Niveau 1</span><h2>Droit commun & Europe</h2><p>Les règles générales qui structurent directement la question.</p></div></div><div className="law-grid">{items.map(x=><a className="law-card" href={x.url} target="_blank" rel="noopener noreferrer" key={x.id}><div><span>{x.level}</span><b>{x.ref}</b></div><strong>{x.title}</strong><p>{x.simple}</p><small><strong>Pourquoi ici :</strong> {x.why}</small><i>Source officielle ↗</i></a>)}</div></section>;
 }
 
 function CaseBlock({items}){
- if(!items.length) return <p className="muted">Aucune décision vérifiée n’est encore reliée à cette recherche.</p>;
- return <div className="search-case-grid">{items.map(({j})=><article className="search-case" key={j.id}>
-   <span>⚖️ {j.court}</span><h3>{j.number}</h3><p>{j.result}</p>
-   {j.judgment?.amounts?.length>0&&<div className="mini-amount">{j.judgment.amounts.slice(0,2).map(([label,amount])=><div key={label}><small>{label}</small><strong>{amount}</strong></div>)}</div>}
-   <a href={j.url} target="_blank" rel="noopener noreferrer">Décision officielle / source ↗</a>
- </article>)}</div>;
+  if(!items.length) return <p className="muted">Aucune décision vérifiée n’est reliée à cette recherche.</p>;
+  return <div className="search-case-grid">{items.map(({j})=><article className="search-case" key={j.id}>
+    <span>⚖️ {j.court}</span><h3>{j.number}</h3><p>{j.result}</p>
+    {j.judgment?.amounts?.length>0&&<div className="mini-amount">{j.judgment.amounts.slice(0,2).map(([label,amount])=><div key={label}><small>{label}</small><strong>{amount}</strong></div>)}</div>}
+    <a href={j.url} target="_blank" rel="noopener noreferrer">Décision officielle / source ↗</a>
+  </article>)}</div>;
 }
 
 function DocCard({item,label}){
- const {d}=item; const x=explanationFor(d);
- return <Link className="correlation-doc" href={`/textes/${d.id}`}>
-   <div className="correlation-top"><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<b>{d.ref}</b>}<em>{label}</em></div>
-   <h3>{x.heading||d.title}</h3>
-   <p>{x.simple}</p>
-   {item.why&&<small><strong>Pourquoi il apparaît :</strong> {item.why}</small>}
-   <i>Ouvrir la fiche →</i>
- </Link>;
+  const {d}=item; const x=explanationFor(d);
+  return <Link className="correlation-doc" href={`/textes/${d.id}`}>
+    <div className="correlation-top"><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<b>{d.ref}</b>}<em>{label}</em></div>
+    <h3>{x.heading||d.title}</h3>
+    <p>{x.simple}</p>
+    {item.why&&<small><strong>Pourquoi ce texte :</strong> {item.why}</small>}
+    <i>Comprendre ce texte →</i>
+  </Link>;
+}
+
+function SourceGroup({title,subtitle,items,label='À lire'}){
+  if(!items.length)return null;
+  return <section className="progress-source-group">
+    <div className="progress-source-title"><span>{title}</span><small>{subtitle}</small></div>
+    <div className="correlation-grid">{items.map(item=><DocCard key={item.d.id} item={item} label={label}/>)}</div>
+  </section>;
 }
 
 export default async function Recherche({searchParams}){
- const p=await searchParams; const q=(p?.q||'').trim(); const terms=tokens(q); const packs=q?packsForQuery(q):[]; const lawItems=q?publicLawFor(q):[];
- const lexical=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
- const maxScore=lexical[0]?.s||0;
- const strongest=lexical.filter(x=>x.s===maxScore).slice(0,10);
- const queryRefs=[...(q.match(refRegex)||[])].map(canonRef);
- const seedRefs=[...new Set([...queryRefs,...strongest.flatMap(x=>refsIn(x.d))])];
+  const p=await searchParams;
+  const q=(p?.q||'').trim();
+  const terms=tokens(q);
+  const packs=q?packsForQuery(q):[];
+  const dossierPack=q?packForQuery(q):null;
+  const lawItems=q?publicLawFor(q):[];
 
- const packCorrelated=q?data.map(d=>{const rel=correlationFor(d,packs);return rel?{d,s:0,...rel}:null}).filter(Boolean):[];
- const autoCorrelated=q&&seedRefs.length?data.map(d=>{
-   const drefs=refsIn(d); const hay=docText(d);
-   const hits=seedRefs.filter(ref=>drefs.includes(ref)||hay.includes(norm(ref)));
-   if(!hits.length) return null;
-   return {d,s:0,kind:isExtension(d)?'extension':'correlation',why:`Ce document est relié à ${hits.join(', ')} : il le cite, l’applique, le modifie, l’étend ou reprend la même référence.`};
- }).filter(Boolean):[];
- const corrMap=new Map();
- [...autoCorrelated,...packCorrelated].forEach(x=>{const prev=corrMap.get(x.d.id);corrMap.set(x.d.id,prev&&prev.pack?prev:x);});
- const correlated=[...corrMap.values()];
- const all=uniqById([...lexical,...correlated]);
- const correlatedIds=new Set(correlated.map(x=>x.d.id));
- const primary=all.filter(x=>correlatedIds.has(x.d.id)&&!isExtension(x.d)).map(x=>corrMap.get(x.d.id)||x).sort((a,b)=>(b.s||0)-(a.s||0));
- const extensions=all.filter(x=>correlatedIds.has(x.d.id)&&isExtension(x.d)).map(x=>corrMap.get(x.d.id)||x);
- const other=lexical.filter(x=>!correlatedIds.has(x.d.id)).slice(0,30);
+  const lexical=q?data.map(d=>({d,s:score(docText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
+  const maxScore=lexical[0]?.s||0;
+  const strongest=lexical.filter(x=>x.s===maxScore).slice(0,10);
+  const queryRefs=[...(q.match(refRegex)||[])].map(canonRef);
+  const seedRefs=[...new Set([...queryRefs,...strongest.flatMap(x=>refsIn(x.d))])];
 
- const packWords=packs.flatMap(pack=>[pack.id,pack.label,...pack.refs]);
- const caseTerms=[...terms,...packWords.map(norm),...seedRefs.map(norm)];
- const cases=q?jurisprudence.map(j=>({j,s:score(caseText(j),caseTerms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
- const ds=q?Object.values(dossiers).map(d=>({d,s:score(dossierText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
- const top=ds[0]?.d;
- return <>
-  <section className="question-head"><span>💬</span><div><div className="eyebrow">Pose ta question normalement</div><h1>Qu’est-ce que tu veux vérifier ?</h1><p>Le moteur cherche le texte principal, puis suit automatiquement les références qui le modifient, l’appliquent ou doivent être lues avec lui.</p></div></section>
-  <form className="ask-box" action="/recherche"><textarea name="q" defaultValue={q} autoFocus placeholder="Ex. J’ai travaillé en astreinte, j’arrive à 48 h jeudi et on veut me faire poser un RTT. Quels textes s’appliquent ?" aria-label="Ta question"/><button type="submit">Analyser ma question <span>→</span></button></form>
-  <div className="quick-asks"><span>Exemples :</span><Link href="/recherche?q=Ma+pause+de+midi+est+coup%C3%A9e+par+une+intervention">Pause coupée</Link><Link href="/recherche?q=Je+travaille+%C3%A0+18h30+ai-je+droit+au+repas+PERS+793">Repas à 18h30</Link><Link href="/recherche?q=Je+d%C3%A9passe+48+h+en+sortie+d%27astreinte">48 h + astreinte</Link></div>
+  const dossierLinked=dossierPack
+    ? documentsForDossier(data,dossierPack.id).map(({document,relation})=>({
+        d:document,s:relation.score,why:relation.why,dossierTier:relation.tier,
+        kind:relation.tier==='related'||isExtension(document)?'extension':'correlation'
+      }))
+    :[];
 
-  {q&&<>
-   <section className="answer-map">
-     <div className="answer-map-head"><span>🧭</span><div><small>CARTE DE TA QUESTION</small><h2>{relationSummary(packs)||'Le moteur a suivi les références trouvées dans le corpus pour reconstruire les textes liés.'}</h2></div></div>
-     {packs.length>0&&<div className="pack-row">{packs.map((pack,i)=><div className="pack-pill" key={pack.id}><b>{pack.icon}</b><span>{pack.label}</span>{i<packs.length-1&&<i>＋</i>}</div>)}</div>}
-     {seedRefs.length>0&&<div className="followed-refs"><small>Références suivies automatiquement :</small><div>{seedRefs.map(ref=><span key={ref}>{ref}</span>)}</div></div>}
-     <div className="answer-stats"><div><strong>{lawItems.length}</strong><span>règles droit commun</span></div><div><strong>{primary.length}</strong><span>textes à lire ensemble</span></div><div><strong>{cases.length}</strong><span>décisions reliées</span></div></div>
-   </section>
+  const packCorrelated=q?data.map(d=>{const rel=correlationFor(d,packs);return rel?{d,s:0,...rel}:null}).filter(Boolean):[];
+  const autoCorrelated=q&&seedRefs.length?data.map(d=>{
+    const drefs=refsIn(d); const hay=docText(d);
+    const hits=seedRefs.filter(ref=>drefs.includes(ref)||hay.includes(norm(ref)));
+    if(!hits.length) return null;
+    return {d,s:0,kind:isExtension(d)?'extension':'correlation',why:`Ce document est relié à ${hits.join(', ')} : il le cite, l’applique, le modifie, l’étend ou reprend la même référence.`};
+  }).filter(Boolean):[];
 
-   {top&&<section className="plain-answer"><div className="plain-icon">💡</div><div><span className="section-kicker">D’abord, en clair</span><h2>{top.title}</h2><p className="plain-lead">{top.subtitle}</p>{top.sections.slice(0,2).map((s,i)=><div className="plain-point" key={i}><b>{i+1}</b><p><strong>{s.title.replace(/^\d+\.\s*/, '')}</strong><br/>{s.text}</p></div>)}<Link href={`/dossiers/${top.slug}`}>Voir le guide complet →</Link></div></section>}
+  const corrMap=new Map();
+  [...autoCorrelated,...packCorrelated,...dossierLinked].forEach(x=>{
+    const prev=corrMap.get(x.d.id);
+    if(!prev||x.dossierTier||(!prev.pack&&x.pack)) corrMap.set(x.d.id,x);
+  });
+  const correlated=[...corrMap.values()];
+  const correlatedIds=new Set(correlated.map(x=>x.d.id));
+  const all=uniqById([...lexical,...correlated]);
 
-   <LawBlock items={lawItems}/>
+  const direct=all
+    .filter(x=>correlatedIds.has(x.d.id)&&!isExtension(x.d))
+    .map(x=>corrMap.get(x.d.id)||x)
+    .filter(x=>x.dossierTier!=='related')
+    .sort((a,b)=>(b.s||0)-(a.s||0));
 
-   <section className="correlation-section">
-     <div className="section-heading"><div><span className="section-kicker">IEG + GRDF</span><h2>Ces textes doivent être lus ensemble</h2></div><p>Le moteur combine recherche directe, liens entre références et règles de corrélation.</p></div>
-     {primary.length?<div className="correlation-grid">{primary.map(item=><DocCard key={item.d.id} item={item} label={item.pack?'À corréler':'Lien détecté'}/>)}</div>:<p className="empty">Aucun lien juridique supplémentaire n’a été détecté automatiquement. Les résultats textuels sont affichés plus bas.</p>}
-   </section>
+  const supplements=all
+    .filter(x=>correlatedIds.has(x.d.id))
+    .map(x=>corrMap.get(x.d.id)||x)
+    .filter(x=>x.dossierTier==='related'||isExtension(x.d))
+    .sort((a,b)=>(b.s||0)-(a.s||0));
 
-   {extensions.length>0&&<details className="extensions-box"><summary><span>🔗</span><div><strong>Modifications, décisions d’extension et textes d’application</strong><small>{extensions.length} document{extensions.length>1?'s':''} relié{extensions.length>1?'s':''} automatiquement</small></div><b>＋</b></summary><div className="extension-list">{extensions.map(item=><DocCard key={item.d.id} item={item} label="Complément"/>)}</div></details>}
+  const other=lexical.filter(x=>!correlatedIds.has(x.d.id)).slice(0,30);
 
-   <section className="case-search-section"><div className="section-heading"><div><span className="section-kicker">Ce que les juges en ont fait</span><h2>Jurisprudence reliée à la question</h2></div><Link className="section-link" href="/jurisprudence">Voir toutes les décisions →</Link></div><CaseBlock items={cases}/></section>
+  const packWords=packs.flatMap(pack=>[pack.id,pack.label,...pack.refs]);
+  const caseTerms=[...terms,...packWords.map(norm),...seedRefs.map(norm)];
+  const cases=q?jurisprudence.map(j=>({j,s:score(caseText(j),caseTerms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
+  const ds=q?Object.values(dossiers).map(d=>({d,s:score(dossierText(d),terms)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s):[];
+  const top=ds[0]?.d;
 
-   {other.length>0&&<details className="other-results"><summary>Voir aussi les autres textes contenant les mots de ma question ({other.length}) <span>＋</span></summary><div className="results">{other.map(item=>{const x=explanationFor(item.d);return <Link className="result" href={`/textes/${item.d.id}`} key={item.d.id}><div><span className={'stamp '+(scopeOf(item.d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(item.d))}</span>{item.d.ref&&<strong>{item.d.ref}</strong>}</div><h3>{item.d.title}</h3><p>{x.simple}</p></Link>})}</div></details>}
-  </>}
- </>;
+  const ieg=direct.filter(x=>scopeOf(x.d)==='ieg');
+  const grdf=direct.filter(x=>scopeOf(x.d)==='grdf');
+  const local=direct.filter(x=>scopeOf(x.d)==='local');
+  const visibleCount=lawItems.length+direct.length;
+
+  return <>
+    <section className="question-head question-head-lite">
+      <span>💬</span><div><div className="eyebrow">Une question, puis seulement ce dont tu as besoin</div><h1>Qu’est-ce que tu veux comprendre ?</h1><p>Écris normalement. Tu verras d’abord l’essentiel ; les textes restent repliés tant que tu ne demandes pas à aller plus loin.</p></div>
+    </section>
+    <form className="ask-box ask-box-lite" action="/recherche">
+      <textarea name="q" defaultValue={q} autoFocus placeholder="Ex. Ai-je droit à une indemnité de repas ?" aria-label="Ta question"/>
+      <button type="submit">Explique-moi <span>→</span></button>
+    </form>
+
+    {q&&<>
+      <section className="simple-result-card">
+        <div className="simple-result-top"><span>💡</span><div><small>JE RETIENS</small><h2>{top?.title||dossierPack?.label||'Voici ce que le corpus permet d’identifier'}</h2></div></div>
+        <p className="simple-result-lead">{top?.subtitle||dossierPack?.subtitle||'La recherche a identifié les textes les plus directement liés à ta question.'}</p>
+        {top?.sections?.slice(0,2).map((s,i)=><div className="simple-result-point" key={i}><b>{i+1}</b><p><strong>{s.title.replace(/^\d+\.\s*/, '')}</strong><br/>{s.text}</p></div>)}
+        {!top&&dossierPack&&<div className="simple-result-point"><b>✓</b><p><strong>Le dossier est reconstitué avant affichage.</strong><br/>{direct.length} texte{direct.length>1?'s':''} directement lié{direct.length>1?'s':''} et {supplements.length} complément{supplements.length>1?'s':''} ont été identifiés dans le corpus.</p></div>}
+        <div className="simple-result-actions">
+          {top&&<Link href={`/dossiers/${top.slug}`}>Comprendre le sujet en détail →</Link>}
+          <a href="#sources">Voir les textes seulement si j’en ai besoin ↓</a>
+        </div>
+      </section>
+
+      <section className="discovery-strip">
+        <div><span>1</span><strong>Je comprends</strong><small>la règle en clair</small></div>
+        <div><span>2</span><strong>J’approfondis</strong><small>si quelque chose m’intéresse</small></div>
+        <div><span>3</span><strong>Je vérifie</strong><small>les textes et décisions</small></div>
+      </section>
+
+      <section id="sources" className="progress-sources">
+        <details className="progress-details">
+          <summary><div><span className="progress-icon">📚</span><div><small>ÉTAPE SUIVANTE</small><strong>Voir les textes qui fondent cette réponse</strong><p>{visibleCount} source{visibleCount>1?'s':''} structurante{visibleCount>1?'s':''} classée{visibleCount>1?'s':''} par niveau.</p></div></div><b>Ouvrir ＋</b></summary>
+          <div className="progress-details-body">
+            <LawBlock items={lawItems}/>
+            <SourceGroup title="Niveau 2 · Statut & branche IEG" subtitle="PERS, Notes DP, Circulaires N et accords de branche." items={ieg}/>
+            <SourceGroup title="Niveau 3 · GRDF" subtitle="Accords, décisions, notes et règles d’entreprise." items={grdf}/>
+            <SourceGroup title="Niveau 4 · Local" subtitle="Uniquement lorsque le texte vise le bon périmètre." items={local}/>
+            {!visibleCount&&<p className="empty">Aucun texte suffisamment direct n’a été identifié. L’application préfère ne pas remplir l’écran avec des résultats faibles.</p>}
+          </div>
+        </details>
+
+        {supplements.length>0&&<details className="progress-details secondary-progress">
+          <summary><div><span className="progress-icon">🔗</span><div><small>SI TU VEUX ALLER PLUS LOIN</small><strong>Textes liés, extensions et compléments</strong><p>{supplements.length} document{supplements.length>1?'s':''} gardé{supplements.length>1?'s':''} en retrait pour ne pas te submerger.</p></div></div><b>Ouvrir ＋</b></summary>
+          <div className="progress-details-body"><div className="correlation-grid">{supplements.map(item=><DocCard key={item.d.id} item={item} label="Complément"/>)}</div></div>
+        </details>}
+
+        {cases.length>0&&<details className="progress-details secondary-progress">
+          <summary><div><span className="progress-icon">⚖️</span><div><small>INTERPRÉTATION</small><strong>Voir les décisions de justice reliées</strong><p>Seulement si tu veux voir comment une règle a été interprétée ou appliquée.</p></div></div><b>Ouvrir ＋</b></summary>
+          <div className="progress-details-body"><CaseBlock items={cases}/></div>
+        </details>}
+
+        {other.length>0&&<details className="progress-details tertiary-progress">
+          <summary><div><span className="progress-icon">🔎</span><div><small>RECHERCHE LARGE</small><strong>Voir les autres résultats contenant mes mots</strong><p>Résultats moins ciblés : à utiliser seulement si tu veux fouiller le corpus.</p></div></div><b>{other.length} résultats ＋</b></summary>
+          <div className="progress-details-body"><div className="results">{other.map(item=>{const x=explanationFor(item.d);return <Link className="result" href={`/textes/${item.d.id}`} key={item.d.id}><div><span className={'stamp '+(scopeOf(item.d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(item.d))}</span>{item.d.ref&&<strong>{item.d.ref}</strong>}</div><h3>{item.d.title}</h3><p>{x.simple}</p></Link>})}</div></div>
+        </details>}
+      </section>
+    </>}
+  </>;
 }
