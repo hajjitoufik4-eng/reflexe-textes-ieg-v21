@@ -116,17 +116,17 @@ export default async function Recherche({searchParams}){
   const correlatedIds=new Set(correlated.map(x=>x.d.id));
   const all=uniqById([...lexical,...correlated]);
 
-  const direct=all
-    .filter(x=>correlatedIds.has(x.d.id)&&!isExtension(x.d))
-    .map(x=>corrMap.get(x.d.id)||x)
-    .filter(x=>x.dossierTier!=='related')
-    .sort((a,b)=>(b.s||0)-(a.s||0));
-
-  const supplements=all
+  const linked=all
     .filter(x=>correlatedIds.has(x.d.id))
     .map(x=>corrMap.get(x.d.id)||x)
-    .filter(x=>x.dossierTier==='related'||isExtension(x.d))
     .sort((a,b)=>(b.s||0)-(a.s||0));
+
+  const direct=linked
+    .filter(x=>!isExtension(x.d))
+    .filter(x=>!x.dossierTier||x.dossierTier==='core');
+
+  const supplements=linked
+    .filter(x=>isExtension(x.d)||x.dossierTier==='related'||x.dossierTier==='direct');
 
   const other=lexical.filter(x=>!correlatedIds.has(x.d.id)).slice(0,30);
 
