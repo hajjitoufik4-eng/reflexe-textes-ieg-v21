@@ -180,6 +180,8 @@ function titleMatches(document,list=[]){
 export function dossierRelation(document,pack){
   if(!pack) return null;
   const ref=R(document.ref);
+  const isExtension=/décision d.?extension|decision d.?extension|enn\s*\d/i.test(String(document.title||''));
+  if(isExtension&&pack.coreRefs.some(r=>R(r)===ref)) return {tier:'related',score:58,why:'Décision d’extension ou texte rattaché à une référence structurante du dossier.'};
   if(pack.coreRefs.some(r=>R(r)===ref)) return {tier:'core',score:100,why:'Référence structurante du dossier.'};
   if(titleMatches(document,pack.coreTitles)) return {tier:'core',score:90,why:'Le titre du document traite directement du dossier.'};
   if(pack.relatedRefs.some(r=>R(r)===ref)) return {tier:'related',score:55,why:'Texte connexe utile pour replacer la règle dans son contexte.'};
@@ -200,7 +202,8 @@ export function documentsForDossier(documents,id){
     .filter(x=>x.relation)
     .sort((a,b)=>b.relation.score-a.relation.score||String(a.document.ref||a.document.title).localeCompare(String(b.document.ref||b.document.title),'fr'))
     .filter(({document})=>{
-      const key=R(document.ref)||N(document.title);
+      const isExtension=/décision d.?extension|decision d.?extension|enn\s*\d/i.test(String(document.title||''));
+      const key=R(document.ref)?`${R(document.ref)}|${isExtension?'extension':'main'}`:N(document.title);
       if(seen.has(key)) return false;
       seen.add(key);
       return true;
