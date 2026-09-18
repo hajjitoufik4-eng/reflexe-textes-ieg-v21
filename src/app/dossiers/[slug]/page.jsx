@@ -1,76 +1,104 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import data from '../../../data/all-documents.js';
-import { dossiers } from '../../../data/dossiers.js';
+import { dossierPacks, dossierPack, documentsForDossier } from '../../../data/dossier-packs.js';
 import { jurisprudence } from '../../../data/jurisprudence.js';
+import { publicLawFor } from '../../../data/public-law.js';
 import { scopeOf, scopeName } from '../../../lib/catalogue.mjs';
+import { explanationFor } from '../../../lib/explain.mjs';
 
-const norm=(s='')=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ');
-const text=d=>norm([d.ref,d.title,d.theme,d.folder,d.kind,d.origin,d.explanation?.heading,d.explanation?.simple,...(d.explanation?.points||[])].filter(Boolean).join(' '));
-const unique=docs=>docs.filter((d,i,a)=>a.findIndex(x=>norm(x.origin||x.title)===norm(d.origin||d.title))===i);
-const ASTREINTE_REFS=['PERS530','PERS557','PERS849','PERS939'];
-const TEMPS_REFS=['PERS77','PERS788'];
-function dossierDocs(slug){
- if(slug==='astreinte') return unique(data.filter(d=>ASTREINTE_REFS.includes((d.ref||'').replace(/\s/g,''))||/astreinte|action immediate|zone.{0,8}habitat|\bzha\b|\bmres\b|repos.{0,8}11/i.test([d.title,d.origin,d.theme].join(' '))));
- if(slug==='temps-de-travail') return unique(data.filter(d=>TEMPS_REFS.includes((d.ref||'').replace(/\s/g,''))||/temps de travail|duree du travail|repos quotidien|repos hebdomadaire|heures supplementaires|horaire|pause|repos.{0,8}11/i.test(text(d))));
- return [];
+const norm=(s='')=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+export function generateStaticParams(){return dossierPacks.map(d=>({slug:d.id}));}
+export async function generateMetadata({params}){const {slug}=await params;const d=dossierPack(slug);return {title:d?.label||'Dossier'};}
+
+function DocCard({item,label}){
+  const d=item.document; const x=explanationFor(d);
+  return <Link className="dossier-doc-card" href={`/textes/${d.id}`}>
+    <div><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<b>{d.ref}</b>}<em>{label}</em></div>
+    <h3>{x.heading||d.title}</h3>
+    <p>{x.simple||'Référence présente dans le corpus. Ouvre la fiche pour voir le rôle du texte et les explications disponibles.'}</p>
+    <small>Comprendre ce texte →</small>
+  </Link>;
 }
-const rank=d=>{const ref=(d.ref||'').replace(/\s/g,'');if(ASTREINTE_REFS.includes(ref)||TEMPS_REFS.includes(ref))return 0;if(scopeOf(d)==='grdf')return 1;return 2;};
-const iconFor=(slug,i)=>slug==='astreinte'?['📟','🚗','😴','⏱️','🏠'][i%5]:['🕒','☕','😴','48','📅'][i%5];
-function isEssential(slug,d){
- const h=norm(`${d.ref||''} ${d.title||''} ${d.origin||''}`);
- if(slug==='astreinte') return /pers530|pers557|pers849|accord.*astreinte|m res|020048|zha|repos.*11/.test(h);
- return /pers77|accord national.*temps|accord temps de travail|repos.*11|2012 07 03/.test(h);
+
+function SourceGroup({title,subtitle,items,label}){
+  if(!items.length)return null;
+  return <section className="dossier-source-group">
+    <div className="dossier-source-title"><div><span>{title}</span><small>{subtitle}</small></div><b>{items.length}</b></div>
+    <div className="dossier-doc-grid">{items.map(item=><DocCard key={item.document.id} item={item} label={label}/>)}</div>
+  </section>;
 }
-export function generateStaticParams(){return Object.keys(dossiers).map(slug=>({slug}));}
-export async function generateMetadata({params}){const {slug}=await params;return {title:dossiers[slug]?.title||'Dossier'};}
 
-export default async function Dossier({params}){
- const {slug}=await params; const dossier=dossiers[slug]; if(!dossier) notFound();
- const docs=dossierDocs(slug).sort((a,b)=>rank(a)-rank(b)||a.title.localeCompare(b.title,'fr'));
- const essentials=docs.filter(d=>isEssential(slug,d)).slice(0,8);
- const qs=dossier.queries.map(norm); const cases=jurisprudence.filter(j=>j.topics.some(t=>qs.some(q=>norm(t).includes(q)||q.includes(norm(t)))));
- const ieg=docs.filter(d=>scopeOf(d)!=='grdf'); const grdf=docs.filter(d=>scopeOf(d)==='grdf');
- const situationLinks=slug==='astreinte' ? [
-   ['🚨','Je viens d’être appelé','intervention astreinte travail effectif'],
-   ['😴','Je veux comprendre mes 11 h','repos 11 h astreinte'],
-   ['48','J’arrive à 48 h','48 h astreinte repos'],
-   ['🏠','On m’impose une ZHA','ZHA zone habitat astreinte'],
- ] : [
-   ['☕','Ma pause est coupée','pause méridienne PERS 77'],
-   ['🕒','Je dépasse mon horaire','heures supplémentaires PERS 77'],
-   ['😴','Je n’ai pas mes 11 h','repos quotidien 11 h'],
-   ['48','Je dépasse 48 h','48 h durée maximale travail'],
- ];
- const Group=({title,items})=>items.length?<section className="full-text-group"><h3>{title} <span>({items.length})</span></h3><div className="results">{items.map(d=><Link className="result" href={`/textes/${d.id}`} key={d.id}><div><span className={'stamp '+(scopeOf(d)==='grdf'?'grdf':'')}>{scopeName(scopeOf(d))}</span>{d.ref&&<strong>{d.ref}</strong>}</div><h3>{d.title}</h3><p>{d.explanation?.simple||'Référence fournie dans le corpus. Ouvre la fiche pour voir son niveau, son origine et les explications disponibles.'}</p></Link>)}</div></section>:null;
- return <>
-  <Link className="back" href="/">← Accueil</Link>
-  <section className={`dossier-hero ${slug==='astreinte'?'dossier-astreinte':'dossier-temps'}`}>
-    <div><span className="dossier-symbol">{slug==='astreinte'?'📟':'🕒'}</span><span className="dossier-label">Le guide simple</span><h1>{dossier.title}</h1><p>{dossier.subtitle}</p></div>
-    <div className="dossier-count"><strong>{docs.length}</strong><span>textes reliés<br/>et triés</span></div>
-  </section>
+export default async function DossierPage({params}){
+  const {slug}=await params;
+  const pack=dossierPack(slug);
+  if(!pack) notFound();
 
-  <section className="situation-strip">
-    <span>Je veux savoir…</span>
-    <div>{situationLinks.map(([icon,label,q])=><Link href={`/recherche?q=${encodeURIComponent(q)}`} key={label}><b>{icon}</b>{label}<i>›</i></Link>)}</div>
-  </section>
+  const linked=documentsForDossier(data,slug);
+  const core=linked.filter(x=>x.relation.tier==='core'&&!/extension|enn/i.test(x.document.title||''));
+  const direct=linked.filter(x=>x.relation.tier==='direct'&&!/extension|enn/i.test(x.document.title||''));
+  const complements=linked.filter(x=>x.relation.tier==='related'||/extension|enn/i.test(x.document.title||''));
 
-  <section className="dossier-fast">
-    <div className="section-heading"><div><span className="section-kicker">En 30 secondes</span><h2>Les 3 choses à retenir</h2></div><p>Tu peux déjà comprendre l’essentiel sans ouvrir un PDF.</p></div>
-    <div className="takeaway-grid">{dossier.sections.slice(0,3).map((s,i)=><article key={i} className="takeaway-card"><span>{iconFor(slug,i)}</span><b>{i+1}</b><h3>{s.title.replace(/^\d+\.\s*/, '')}</h3><p>{s.text}</p></article>)}</div>
-    {dossier.sections.length>3&&<details className="learn-more"><summary>Comprendre le dossier plus en détail <span>＋</span></summary><div>{dossier.sections.slice(3).map((s,i)=><article className="explain" key={i}><h3>{s.title}</h3><p>{s.text}</p></article>)}</div></details>}
-  </section>
+  const essential=[...core,...direct].filter((x,i,a)=>a.findIndex(y=>y.document.id===x.document.id)===i).slice(0,6);
+  const extra=[...core,...direct].filter((x,i,a)=>a.findIndex(y=>y.document.id===x.document.id)===i).slice(6);
 
-  <section className="essential-docs">
-    <div className="section-heading"><div><span className="section-kicker">Pas besoin de tout lire</span><h2>Les textes à ouvrir en premier</h2></div><p>{essentials.length} références sélectionnées pour ce dossier.</p></div>
-    <div className="essential-doc-grid">{essentials.map((d,i)=><Link href={`/textes/${d.id}`} className="essential-doc" key={d.id}><span className="doc-number">{String(i+1).padStart(2,'0')}</span><div><small>{scopeName(scopeOf(d))}{d.ref?` · ${d.ref}`:''}</small><h3>{d.explanation?.heading||d.title}</h3><p>{d.explanation?.simple||'Ouvre cette fiche pour voir l’explication simple et le document de référence.'}</p></div><b>›</b></Link>)}</div>
-  </section>
+  const query=[pack.label,...pack.triggers].join(' ');
+  const law=publicLawFor(query).slice(0,4);
+  const caseTerms=pack.triggers.map(norm);
+  const cases=jurisprudence.filter(j=>j.topics?.some(t=>caseTerms.some(q=>norm(t).includes(q)||q.includes(norm(t))))).slice(0,4);
 
-  <section className="case-preview">
-    <div className="section-heading"><div><span className="section-kicker">Les juges ont aussi parlé</span><h2>Décisions utiles pour ce sujet</h2></div><Link className="section-link" href="/jurisprudence">Toutes les décisions →</Link></div>
-    <div className="case-preview-grid">{cases.slice(0,3).map(j=><article key={j.id}><span>⚖️ {j.court}</span><h3>{j.number}</h3><p>{j.result}</p><a href={j.url} target="_blank" rel="noopener noreferrer">Voir la décision ↗</a></article>)}</div>
-  </section>
+  const branch=essential.filter(x=>scopeOf(x.document)==='ieg');
+  const grdf=essential.filter(x=>scopeOf(x.document)==='grdf');
+  const local=essential.filter(x=>scopeOf(x.document)==='local');
 
-  <details id="textes" className="all-docs"><summary>Voir tous les textes du dossier ({docs.length}) <span>＋</span></summary><div><Group title="IEG / branche et PERS" items={ieg}/><Group title="Entreprise GRDF" items={grdf}/></div></details>
- </>;
+  return <>
+    <Link className="back" href="/">← Accueil</Link>
+
+    <section className="dossier-page-hero">
+      <div>
+        <span className="dossier-page-kicker">📁 Dossier</span>
+        <h1>{pack.label}</h1>
+        <p>{pack.subtitle}</p>
+      </div>
+      <div className="dossier-page-guide"><span>💡</span><p><strong>Commence par l’essentiel.</strong><br/>Les autres textes restent cachés tant que tu n’en as pas besoin.</p></div>
+    </section>
+
+    <section className="dossier-question-box">
+      <div><span>💬</span><div><strong>Tu as une question précise sur ce dossier ?</strong><p>Pose-la avec tes mots. La recherche restera centrée sur le sujet.</p></div></div>
+      <form action="/recherche"><input type="hidden" name="q" value={pack.label}/><button>Poser une question →</button></form>
+    </section>
+
+    <section className="dossier-first">
+      <div className="section-heading simple-heading">
+        <div><span className="section-kicker">Commence ici</span><h2>Les textes à connaître en premier</h2></div>
+        <p>Maximum 6 références sur l’écran. Le reste est disponible plus bas si tu veux approfondir.</p>
+      </div>
+
+      {law.length>0&&<section className="dossier-law-mini">
+        <div className="dossier-level-head"><span>1</span><div><strong>Droit commun & Europe</strong><small>Le cadre général avant les textes IEG et GRDF.</small></div></div>
+        <div className="dossier-law-grid">{law.map(x=><a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer"><b>{x.ref}</b><strong>{x.title}</strong><p>{x.simple}</p></a>)}</div>
+      </section>}
+
+      <SourceGroup title="2 · Statut & branche IEG" subtitle="PERS, Notes DP, Circulaires N et accords de branche." items={branch} label="Essentiel"/>
+      <SourceGroup title="3 · GRDF" subtitle="Accords, décisions et notes applicables dans l’entreprise." items={grdf} label="Essentiel"/>
+      <SourceGroup title="4 · Local" subtitle="Seulement lorsque le périmètre local est directement concerné." items={local} label="Essentiel"/>
+
+      {!essential.length&&!law.length&&<div className="empty">Aucun texte suffisamment structurant n’a été identifié pour ce dossier. L’application préfère ne pas remplir l’écran avec des résultats faibles.</div>}
+    </section>
+
+    {(extra.length>0||complements.length>0)&&<details className="dossier-more">
+      <summary><div><span>🔗</span><div><small>SI TU VEUX ALLER PLUS LOIN</small><strong>Voir tous les textes liés à ce dossier</strong><p>{extra.length+complements.length} document{extra.length+complements.length>1?'s':''} gardé{extra.length+complements.length>1?'s':''} en retrait.</p></div></div><b>Ouvrir ＋</b></summary>
+      <div className="dossier-more-body">
+        <div className="dossier-doc-grid">
+          {[...extra,...complements].filter((x,i,a)=>a.findIndex(y=>y.document.id===x.document.id)===i).map(item=><DocCard key={item.document.id} item={item} label={item.relation.tier==='related'?'Complément':'Direct'}/>)}
+        </div>
+      </div>
+    </details>}
+
+    {cases.length>0&&<details className="dossier-more case-more">
+      <summary><div><span>⚖️</span><div><small>INTERPRÉTATION</small><strong>Décisions de justice liées</strong><p>À ouvrir seulement si tu veux voir comment une règle a été interprétée.</p></div></div><b>Ouvrir ＋</b></summary>
+      <div className="dossier-more-body"><div className="case-preview-grid">{cases.map(j=><article key={j.id}><span>⚖️ {j.court}</span><h3>{j.number}</h3><p>{j.result}</p><a href={j.url} target="_blank" rel="noopener noreferrer">Décision officielle ↗</a></article>)}</div></div>
+    </details>}
+  </>;
 }
