@@ -11,9 +11,17 @@ test.describe('Réflexe IEG - parcours intuitif', () => {
     const payClosed = page.locator('details.home-drawer').filter({ hasText: 'Rémunération & frais' });
     await expect(payClosed).not.toHaveAttribute('open', '');
 
+    const hierarchyCards = page.locator('details.hierarchy-mini');
+    for (let i = 0; i < await hierarchyCards.count(); i++) {
+      const card = hierarchyCards.nth(i);
+      await card.locator('summary').click();
+      await expect(card).toHaveAttribute('open', '');
+      await card.locator('summary').click();
+      await expect(card).not.toHaveAttribute('open', '');
+    }
+
     const law = page.locator('details.hierarchy-mini').filter({ hasText: 'Droit commun & Europe' });
     await law.locator('summary').click();
-    await expect(law).toHaveAttribute('open', '');
     await expect(law.getByText(/On commence ici/i)).toBeVisible();
 
     const pay = page.locator('details.home-drawer').filter({ hasText: 'Rémunération & frais' });
@@ -39,6 +47,13 @@ test.describe('Réflexe IEG - parcours intuitif', () => {
 
     const primaryCards = primary.locator('.correlation-doc');
     expect(await primaryCards.count()).toBeLessThanOrEqual(6);
+
+    const pers375 = primary.locator('.correlation-doc').filter({ hasText: 'PERS375' }).first();
+    await pers375.click();
+    await expect(page).toHaveURL(/\/textes\//);
+    await expect(page.getByText(/PERS375/i).first()).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/recherche\?q=repas/);
 
     const complements = page.locator('details.progress-details').filter({ hasText: 'Textes liés, extensions et compléments' });
     await expect(complements).toHaveCount(1);
@@ -75,22 +90,33 @@ test.describe('Réflexe IEG - parcours intuitif', () => {
     expect(widths2.scroll).toBeLessThanOrEqual(widths2.inner + 1);
   });
 
-  test('chaque dossier visible de l’accueil mène à une page de réponse', async ({ page }) => {
+  test('les 24 dossiers de l’accueil ouvrent réellement une réponse exploitable', async ({ page }) => {
+    test.setTimeout(90000);
     await page.goto('/');
-    const drawers = page.locator('details.home-drawer');
-    const total = await drawers.count();
 
-    for (let i = 0; i < total; i++) {
+    const more = page.locator('details.more-domains');
+    await more.locator('summary').click();
+    await expect(more).toHaveAttribute('open', '');
+
+    const drawers = page.locator('details.home-drawer');
+    const hrefs = [];
+    for (let i = 0; i < await drawers.count(); i++) {
       const drawer = drawers.nth(i);
-      if (!(await drawer.isVisible())) continue;
       await drawer.locator('summary').click();
       const links = drawer.locator('.drawer-items a');
-      const count = await links.count();
-      for (let j = 0; j < count; j++) {
+      for (let j = 0; j < await links.count(); j++) {
         const href = await links.nth(j).getAttribute('href');
         expect(href).toMatch(/^\/recherche\?q=/);
+        hrefs.push(href);
       }
       await drawer.locator('summary').click();
+    }
+
+    expect(hrefs.length).toBe(24);
+    for (const href of hrefs) {
+      await page.goto(href);
+      await expect(page.locator('.simple-result-card')).toBeVisible();
+      await expect(page.locator('details.progress-details').first()).toBeVisible();
     }
   });
 });
