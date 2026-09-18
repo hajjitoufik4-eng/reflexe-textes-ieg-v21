@@ -5,6 +5,7 @@ import { dossierPacks, dossierPack, documentsForDossier } from '../../../data/do
 import { jurisprudence } from '../../../data/jurisprudence.js';
 import { publicLawFor } from '../../../data/public-law.js';
 import { scopeOf, scopeName } from '../../../lib/catalogue.mjs';
+import { allDossierLinks } from '../../../data/dossier-navigation.js';
 import { explanationFor } from '../../../lib/explain.mjs';
 
 const norm=(s='')=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -34,6 +35,7 @@ export default async function DossierPage({params}){
   const {slug}=await params;
   const pack=dossierPack(slug);
   if(!pack) notFound();
+  const navEntry=allDossierLinks.find(item=>item.slug===slug);
 
   const linked=documentsForDossier(data,slug);
   const core=linked.filter(x=>x.relation.tier==='core'&&!/extension|enn/i.test(x.document.title||''));
@@ -53,7 +55,9 @@ export default async function DossierPage({params}){
   const local=essential.filter(x=>scopeOf(x.document)==='local');
 
   return <>
-    <Link className="back" href="/">← Accueil</Link>
+    <nav className="dossier-breadcrumb" aria-label="Fil d’Ariane">
+      <Link href="/">Accueil</Link><span>›</span><span>{navEntry?.group||'Dossiers'}</span><span>›</span><strong>{pack.label}</strong>
+    </nav>
 
     <section className="dossier-page-hero">
       <div>
