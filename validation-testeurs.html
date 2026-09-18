@@ -111,7 +111,7 @@
         <button class="feedbackCopy" id="feedbackCopy">Copier mon avis</button>
         <button class="feedbackCancel" id="feedbackCancel">Annuler</button>
       </div>
-      <div class="feedbackHint">Les réponses sont structurées pour pouvoir comparer les retours des testeurs et décider des modifications à intégrer à la version finale.</div>
+      <div class="feedbackHint" id="feedbackStatus">Les réponses sont enregistrées directement pour pouvoir comparer les retours des testeurs et décider des modifications à intégrer à la version finale.</div>
     </div>
   </div>
 </div>
@@ -212,15 +212,71 @@ function feedbackBodyText(){
    +'### Adresse de la page\n'+location.href+'\n\n'
    +'---\nRetour envoyé depuis la version test utilisateurs de Réflexe IEG pour préparation de la version finale.';
 }
+const SUPABASE_URL='https://zhjzmdhwyshvfwywclrl.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_sLUt0rXor8YUg9ykvw1qSA_Q_ggk5OV';
+function feedbackTypeCode(label){
+ if(label.includes('Erreur')||label.includes('Lien'))return 'erreur';
+ if(label.includes('difficile'))return 'pas_clair';
+ if(label.includes('Avis global'))return 'utile';
+ return 'suggestion';
+}
+function feedbackSeverityCode(label){
+ if(label.startsWith('Faible'))return 'faible';
+ if(label.startsWith('Moyenne'))return 'moyenne';
+ if(label.startsWith('Forte'))return 'forte';
+ return 'general';
+}
+function ratingNumber(el){return el.value?parseInt(el.value,10):null}
 feedbackBtn.onclick=openFeedback;feedbackClose.onclick=closeFeedback;feedbackCancel.onclick=closeFeedback;
 feedbackOverlay.onclick=e=>{if(e.target===feedbackOverlay)closeFeedback()};
-feedbackSend.onclick=()=>{
+feedbackSend.onclick=async()=>{
  const hasOpinion=[feedbackLiked,feedbackImprove,feedbackMissing,feedbackPriority,feedbackMessage].some(x=>x.value.trim());
- if(!hasOpinion){feedbackImprove.focus();feedbackImprove.style.borderColor='#d65b5b';return}
+ if(!hasOpinion){feedbackImprove.focus();feedbackImprove.style.borderColor='#d65b5b';feedbackStatus.textContent='Écris au moins une remarque avant d’envoyer.';return}
  feedbackImprove.style.borderColor='';
- const title='[AVIS TESTEUR] '+feedbackType.value+' — '+feedbackPage();
- const url='https://github.com/hajjitoufik4-eng/reflexe-textes-ieg-v21/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(feedbackBodyText());
- window.open(url,'_blank','noopener');
+ const original=feedbackSend.textContent;
+ feedbackSend.disabled=true;
+ feedbackSend.textContent='Envoi…';
+ feedbackStatus.textContent='Enregistrement de ton avis…';
+ const payload={
+   page_path:location.hash||'#/',
+   feedback_type:feedbackTypeCode(feedbackType.value),
+   feedback_category:feedbackType.value,
+   message:feedbackMessage.value.trim()||null,
+   severity:feedbackSeverityCode(feedbackSeverity.value),
+   rating_ease:ratingNumber(ratingEase),
+   rating_clarity:ratingNumber(ratingClarity),
+   rating_navigation:ratingNumber(ratingNav),
+   rating_usefulness:ratingNumber(ratingUseful),
+   liked:feedbackLiked.value.trim()||null,
+   improve:feedbackImprove.value.trim()||null,
+   missing:feedbackMissing.value.trim()||null,
+   priority:feedbackPriority.value.trim()||null,
+   contact:feedbackContact.value.trim()||null,
+   page_url:location.href,
+   user_agent:navigator.userAgent,
+   app_version:'testeurs-v2'
+ };
+ try{
+   const res=await fetch(SUPABASE_URL+'/rest/v1/feedback',{
+     method:'POST',
+     headers:{
+       'apikey':SUPABASE_PUBLISHABLE_KEY,
+       'Content-Type':'application/json',
+       'Prefer':'return=minimal'
+     },
+     body:JSON.stringify(payload)
+   });
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   feedbackStatus.textContent='✓ Merci. Ton avis a bien été enregistré et sera pris en compte pour la version finale.';
+   feedbackSend.textContent='✓ Avis envoyé';
+   [feedbackLiked,feedbackImprove,feedbackMissing,feedbackPriority,feedbackMessage,feedbackContact].forEach(x=>x.value='');
+   [ratingEase,ratingClarity,ratingNav,ratingUseful].forEach(x=>x.value='');
+   setTimeout(()=>{feedbackSend.textContent=original;feedbackSend.disabled=false;closeFeedback()},1800);
+ }catch(e){
+   feedbackStatus.textContent='L’envoi direct a échoué. Tu peux utiliser « Copier mon avis » pour ne pas perdre ton retour.';
+   feedbackSend.textContent='Réessayer';
+   feedbackSend.disabled=false;
+ }
 };
 feedbackCopy.onclick=async()=>{
  const txt=feedbackBodyText();
