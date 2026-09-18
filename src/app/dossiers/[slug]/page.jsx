@@ -66,7 +66,11 @@ export default async function DossierPage({params}){
 
     <section className="dossier-question-box">
       <div><span>💬</span><div><strong>Tu as une question précise sur ce dossier ?</strong><p>Pose-la avec tes mots. La recherche restera centrée sur le sujet.</p></div></div>
-      <form action="/recherche"><input type="hidden" name="q" value={pack.label}/><button>Poser une question →</button></form>
+      <form action="/recherche">
+        <input type="hidden" name="dossier" value={pack.id}/>
+        <input name="q" aria-label="Question dans ce dossier" placeholder="Écris ta question…" required/>
+        <button>Expliquer →</button>
+      </form>
     </section>
 
     <section className="dossier-first">
