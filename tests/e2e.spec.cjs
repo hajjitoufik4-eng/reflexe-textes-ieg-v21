@@ -8,7 +8,8 @@ test.describe('Réflexe IEG - parcours intuitif', () => {
     const hierarchy = page.locator('details.hierarchy-mini');
     await expect(hierarchy).toHaveCount(4);
     await expect(page.locator('details.home-drawer')).toHaveCount(9);
-    await expect(page.locator('details.home-drawer').filter({ hasText: 'Rémunération & frais' }).locator('.drawer-items a')).not.toBeVisible();
+    const payClosed = page.locator('details.home-drawer').filter({ hasText: 'Rémunération & frais' });
+    await expect(payClosed).not.toHaveAttribute('open', '');
 
     const law = page.locator('details.hierarchy-mini').filter({ hasText: 'Droit commun & Europe' });
     await law.locator('summary').click();
